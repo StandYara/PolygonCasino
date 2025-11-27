@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="calendar-container">
+    <h1 class="text-center mb-4">📅 Ежедневные награды</h1>
+    
+    <div class="row">
+        <!-- Календарь наград -->
+        <div class="col-md-8">
+            <div class="calendar-main">
+                <div class="calendar-header mb-4">
+                    <h3>🎁 Календарь наград</h3>
+                    <p class="text-muted">Заходи каждый день чтобы получать бонусы!</p>
+                </div>
+
+                <div class="rewards-track">
+                    {% for day in range(1, 31) %}
+                    <div class="reward-item {% if day <= current_day %}available{% else %}locked{% endif %}" 
+                         data-day="{{ day }}">
+                        <div class="reward-day">День {{ day }}</div>
+                        <div class="reward-content">
+                            {% if day % 7 == 0 %}
+                                <div class="reward-big">🎁</div>
+                                <div class="reward-amount">5,000 UC</div>
+                            {% elif day % 3 == 0 %}
+                                <div class="reward-medium">💰</div>
+                                <div class="reward-amount">1,000 UC</div>
+                            {% else %}
+                                <div class="reward-small">⚡</div>
+                                <div class="reward-amount">500 UC</div>
+                            {% endif %}
+                        </div>
+                        <div class="reward-status">
+                            {% if day < current_day %}
+                                <span class="claimed">✅</span>
+                            {% elif day == current_day %}
+                                {% if not claimed_today %}
+                                <span class="available-text">Доступно</span>
+                                {% else %}
+                                <span class="claimed">✅</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="locked-text">🔒</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="calendar-info mt-4">
+                    <div class="info-card">
+                        <h5>💡 Как это работает?</h5>
+                        <ul>
+                            <li>Каждый день доступна новая награда</li>
+                            <li>Не пропускайте дни - награды становятся лучше!</li>
+                            <li>Каждые 7 дней - специальный бонус!</li>
+                            <li>Если пропустили день - цепочка не сбрасывается</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Боковая панель -->
+        <div class="col-md-4">
+            <div class="calendar-sidebar">
+                <div class="stats-card mb-4">
+                    <h5>📊 Ваша статистика</h5>
+                    <div class="stats-grid">
+                        <div class="stat">
+                            <span>Текущий день:</span>
+                            <strong>{{ current_day }}</strong>
+                        </div>
+                        <div class="stat">
+                            <span>Всего собрано:</span>
+                            <strong>{{ total_claimed }} UC</strong>
+                        </div>
+                        <div class="stat">
+                            <span>Пропущено дней:</span>
+                            <strong>{{ missed_days }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="claim-card mb-4">
+                    <h5>🎯 Сегодняшняя награда</h5>
+                    <div class="today-reward">
+                        {% if current_day % 7 == 0 %}
+                        <div class="today-big">🎁 5,000 UC</div>
+                        {% elif current_day % 3 == 0 %}
+                        <div class="today-medium">💰 1,000 UC</div>
+                        {% else %}
+                        <div class="today-small">⚡ 500 UC</div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if not claimed_today %}
+                    <button class="btn btn-claim w-100 mt-3" onclick="claimDailyReward()">
+                        🎁 Забрать награду
+                    </button>
+                    {% else %}
+                    <div class="claimed-alert mt-3">
+                        ✅ Вы уже забрали сегодняшнюю награду
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="timer-card">
+                    <h5>⏰ До следующей награды</h5>
+                    <div class="countdown-timer" id="countdownTimer">
+                        {{ next_reward_time }}
+                    </div>
+                    <small class="text-muted">Обновляется ежедневно в 00:00</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function claimDailyReward() {
+    fetch('/api/claim_daily_reward', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`🎉 Вы получили ${data.reward} UC!`, 'success');
+            // Обновляем страницу через 2 секунды
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            showNotification(data.error || 'Ошибка при получении награды', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка при получении награды', 'error');
+    });
+}
+
+// Таймер обратного отсчета
+function updateCountdown() {
+    const timerElement = document.getElementById('countdownTimer');
+    if (!timerElement) return;
+
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+
+    const diff = tomorrow - now;
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    timerElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Запускаем таймер
+updateCountdown();
+setInterval(updateCountdown, 1000);
+</script>
+
+<style>
+.calendar-container {
+    padding: 20px;
+}
+
+.calendar-main {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.rewards-track {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.reward-item {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #8a2be2;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.reward-item.available {
+    border-color: #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+    cursor: pointer;
+}
+
+.reward-item.available:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+}
+
+.reward-item.locked {
+    opacity: 0.5;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.reward-day {
+    font-size: 12px;
+    color: #b19cd9;
+    margin-bottom: 5px;
+}
+
+.reward-content {
+    margin: 8px 0;
+}
+
+.reward-big {
+    font-size: 24px;
+}
+
+.reward-medium {
+    font-size: 20px;
+}
+
+.reward-small {
+    font-size: 18px;
+}
+
+.reward-amount {
+    font-size: 11px;
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.reward-status {
+    font-size: 10px;
+}
+
+.claimed {
+    color: #28a745;
+}
+
+.available-text {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.locked-text {
+    color: #6c757d;
+}
+
+.calendar-sidebar {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.stats-card, .claim-card, .timer-card {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #8a2be2;
+}
+
+.stats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.stat {
+    display: flex;
+    justify-content: space-between;
+    color: white;
+    font-size: 14px;
+}
+
+.stat strong {
+    color: #ffd700;
+}
+
+.today-reward {
+    text-align: center;
+    padding: 15px;
+    background: rgba(255, 215, 0, 0.1);
+    border: 2px solid #ffd700;
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.today-big {
+    font-size: 24px;
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.today-medium {
+    font-size: 20px;
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.today-small {
+    font-size: 18px;
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.btn-claim {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border: none;
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.btn-claim:hover:not(:disabled) {
+    background: linear-gradient(45deg, #218838, #1e9c7a);
+    transform: translateY(-2px);
+}
+
+.btn-claim:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.claimed-alert {
+    background: rgba(40, 167, 69, 0.2);
+    border: 1px solid #28a745;
+    color: #28a745;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.countdown-timer {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ffd700;
+    text-align: center;
+    margin: 10px 0;
+}
+
+.info-card {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #8a2be2;
+}
+
+.info-card ul {
+    color: #b19cd9;
+    padding-left: 20px;
+    margin-bottom: 0;
+}
+
+.info-card li {
+    margin-bottom: 5px;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+</style>
+{% endblock %}

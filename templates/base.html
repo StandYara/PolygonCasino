@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polygon Casino</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Уведомления */
+        #notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .notification-show {
+            opacity: 1;
+            visibility: visible;
+            top: 30px;
+        }
+
+        .notification-content {
+            background: linear-gradient(45deg, #8a2be2, #4b0082);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            border: 2px solid #ffd700;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            font-weight: bold;
+            text-align: center;
+            min-width: 300px;
+        }
+
+        .notification-success .notification-content {
+            background: linear-gradient(45deg, #28a745, #20c997);
+        }
+
+        .notification-error .notification-content {
+            background: linear-gradient(45deg, #dc3545, #fd7e14);
+        }
+
+        /* Кастомное модальное окно - ФИКСИРОВАННАЯ ПОЗИЦИЯ */
+        #sellConfirmModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10001;
+        }
+
+        #sellConfirmModal.modal-show {
+            display: flex;
+        }
+
+        .modal-custom-content {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d1b69 100%);
+            border: 3px solid #8a2be2;
+            border-radius: 15px;
+            width: 400px;
+            max-width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            animation: modalAppear 0.3s ease;
+        }
+
+        @keyframes modalAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-custom-header {
+            background: linear-gradient(90deg, #8a2be2, #4b0082);
+            padding: 20px;
+            border-radius: 12px 12px 0 0;
+            text-align: center;
+        }
+
+        .modal-custom-header h4 {
+            color: white;
+            margin: 0;
+            font-weight: bold;
+        }
+
+        .modal-custom-body {
+            padding: 25px;
+            text-align: center;
+            color: white;
+        }
+
+        #sellSkinInfo {
+            margin-bottom: 20px;
+        }
+
+        #sellSkinInfo img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 10px;
+            border: 2px solid #8a2be2;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        #sellSkinInfo h5 {
+            margin: 10px 0;
+            color: #ffd700;
+        }
+
+        .modal-custom-footer {
+            padding: 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            border-top: 1px solid #8a2be2;
+        }
+
+        .btn-cancel, .btn-confirm {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .btn-cancel {
+            background: linear-gradient(45deg, #6c757d, #495057);
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: linear-gradient(45deg, #5a6268, #3d4348);
+            transform: translateY(-2px);
+        }
+
+        .btn-confirm {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: linear-gradient(45deg, #218838, #1e9c7a);
+            transform: translateY(-2px);
+        }
+
+        /* Кнопка управления звуком */
+        .sound-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(138, 43, 226, 0.8);
+            border: 2px solid #ffd700;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 20px;
+        }
+
+        .sound-toggle:hover {
+            background: rgba(138, 43, 226, 1);
+            transform: scale(1.1);
+        }
+
+        .sound-toggle.muted {
+            background: rgba(108, 117, 125, 0.8);
+            border-color: #6c757d;
+        }
+
+        /* Аватарка в навигации */
+        .avatar-small {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: 1px solid #ffd700;
+            margin-right: 8px;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark navbar-expand-lg main-nav">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Example</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cases') }}">Кейсы</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('inventory') }}">Инвентарь</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('plane') }}">Самолет</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('upgrade') }}">Улучшение</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('craft') }}">Крафт</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('mines') }}">Сапер</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('withdraw') }}">Вывод</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('calendar') }}">📅 Календарь</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('quests') }}">🎯 Квесты</a>
+                    </li>
+                    {% if session.get('username') == 'Developer' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_panel') }}">👑 Admin Panel</a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <div class="navbar-nav ms-auto">
+                    {% if session.get('user_id') %}
+                    <div class="nav-item balance-container">
+                        <span class="nav-link balance-text" id="userBalance">Загрузка...</span>
+                    </div>
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <img src="{{ url_for('static', filename='images/avatars/' + (session.get('avatar', 'avatar1.png'))) }}"
+                                 alt="Avatar" class="avatar-small">
+                            {{ session.get('username', 'User') }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('settings') }}">⚙️ Настройки</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth_logout') }}">🚪 Выйти</a></li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Контейнер для уведомлений -->
+    <div id="notification" class="notification-hidden">
+        <div class="notification-content">
+            <span id="notificationText"></span>
+        </div>
+    </div>
+
+    <!-- Модальное окно подтверждения продажи -->
+    <div id="sellConfirmModal">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <h4>💰 Подтверждение продажи</h4>
+            </div>
+            <div class="modal-custom-body">
+                <div id="sellSkinInfo">
+                    <img id="sellSkinImage" src="" alt="Скин">
+                    <h5 id="sellSkinName"></h5>
+                    <p>Цена: <span id="sellSkinPrice" class="uc-price"></span> UC</p>
+                </div>
+                <p>Вы уверены, что хотите продать этот скин?</p>
+            </div>
+            <div class="modal-custom-footer">
+                <button class="btn btn-cancel" onclick="hideSellConfirm()">❌ Отмена</button>
+                <button class="btn btn-confirm" onclick="confirmSell()">✅ Продать</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Кнопка управления звуком -->
+    <div class="sound-toggle" id="soundToggle" onclick="toggleSound()">
+        <span id="soundIcon">🔊</span>
+    </div>
+
+    <!-- Звуковые элементы -->
+    <audio id="clickSound" preload="auto">
+        <source src="{{ url_for('static', filename='sounds/click.mp3') }}" type="audio/mpeg">
+    </audio>
+    <audio id="caseOpenSound" preload="auto">
+        <source src="{{ url_for('static', filename='sounds/case_open.mp3') }}" type="audio/mpeg">
+    </audio>
+    <audio id="caseRollSound" preload="auto">
+        <source src="{{ url_for('static', filename='sounds/case_roll.mp3') }}" type="audio/mpeg">
+    </audio>
+    <audio id="caseWinSound" preload="auto">
+        <source src="{{ url_for('static', filename='sounds/case_win.mp3') }}" type="audio/mpeg">
+    </audio>
+    <audio id="caseLoseSound" preload="auto">
+        <source src="{{ url_for('static', filename='sounds/case_lose.mp3') }}" type="audio/mpeg">
+    </audio>
+    <audio id="planeStartSound" preload="auto">
+        <source src="{{ url_for('static', filename='sounds/plane_start.mp3') }}" type="audio/mpeg">
+    </audio>
+    <audio id="planeCrashSound" preload="auto">
+        <source src="{{ url_for('static', filename='sounds/plane_crash.mp3') }}" type="audio/mpeg">
+    </audio>
+    <audio id="planeCashoutSound" preload="auto">
+        <source src="{{ url_for('static', filename='sounds/plane_cashout.mp3') }}" type="audio/mpeg">
+    </audio>
+    <audio id="mineOpenSound" preload="auto">
+        <source src="{{ url_for('static', filename='sounds/mine_open.mp3') }}" type="audio/mpeg">
+    </audio>
+    <audio id="mineExplodeSound" preload="auto">
+        <source src="{{ url_for('static', filename='sounds/mine_explode.mp3') }}" type="audio/mpeg">
+    </audio>
+    <audio id="mineCashoutSound" preload="auto">
+        <source src="{{ url_for('static', filename='sounds/mine_cashout.mp3') }}" type="audio/mpeg">
+    </audio>
+    <audio id="craftSuccessSound" preload="auto">
+        <source src="{{ url_for('static', filename='sounds/craft_success.mp3') }}" type="audio/mpeg">
+    </audio>
+    <audio id="craftFailSound" preload="auto">
+        <source src="{{ url_for('static', filename='sounds/craft_fail.mp3') }}" type="audio/mpeg">
+    </audio>
+    <audio id="upgradeSuccessSound" preload="auto">
+        <source src="{{ url_for('static', filename='sounds/upgrade_success.mp3') }}" type="audio/mpeg">
+    </audio>
+    <audio id="upgradeFailSound" preload="auto">
+        <source src="{{ url_for('static', filename='sounds/upgrade_fail.mp3') }}" type="audio/mpeg">
+    </audio>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Глобальная система звуков
+        let soundEnabled = true;
+
+        // Функция воспроизведения звука
+        function playSound(soundId) {
+            if (!soundEnabled) return;
+
+            const sound = document.getElementById(soundId);
+            if (sound) {
+                sound.currentTime = 0;
+                sound.play().catch(e => console.log('Audio play failed:', e));
+            }
+        }
+
+        // Переключение звука
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const toggle = document.getElementById('soundToggle');
+            const icon = document.getElementById('soundIcon');
+
+            if (soundEnabled) {
+                toggle.classList.remove('muted');
+                icon.textContent = '🔊';
+                // Проигрываем тестовый звук
+                playSound('clickSound');
+            } else {
+                toggle.classList.add('muted');
+                icon.textContent = '🔇';
+            }
+
+            // Сохраняем настройку в localStorage
+            localStorage.setItem('soundEnabled', soundEnabled);
+        }
+
+        // Загрузка настроек звука
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedSound = localStorage.getItem('soundEnabled');
+            if (savedSound !== null) {
+                soundEnabled = savedSound === 'true';
+                if (!soundEnabled) {
+                    document.getElementById('soundToggle').classList.add('muted');
+                    document.getElementById('soundIcon').textContent = '🔇';
+                }
+            }
+
+            // Добавляем звук клика на все кнопки
+            document.addEventListener('click', function(e) {
+                if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                    playSound('clickSound');
+                }
+            });
+
+            // Звук для ссылок в навигации
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => playSound('clickSound'));
+            });
+        });
+
+        // Глобальные функции для звуков
+        window.playSound = playSound;
+        window.soundEnabled = soundEnabled;
+
+        // Глобальные переменные
+        let currentSellSkinId = null;
+        let isModalOpen = false;
+
+        // Глобальная функция для обновления баланса в шапке
+        function updateHeaderBalance() {
+            fetch('/api/get_user_info')
+                .then(response => {
+                    if (!response.ok) throw new Error('Network error');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.balance !== undefined) {
+                        document.getElementById('userBalance').textContent = data.balance + ' UC';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating balance:', error);
+                    document.getElementById('userBalance').textContent = 'Ошибка';
+                });
+        }
+
+        // Загружаем баланс при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            updateHeaderBalance();
+
+            // Периодически обновляем баланс (каждые 10 секунд)
+            setInterval(updateHeaderBalance, 10000);
+        });
+
+        // Глобальная функция для уведомлений
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+
+            notificationText.textContent = message;
+            notification.className = 'notification-show ' + (type === 'success' ? 'notification-success' : 'notification-error');
+
+            setTimeout(() => {
+                notification.className = 'notification-hidden';
+            }, 3000);
+        }
+
+        // Функции модального окна
+        function showSellConfirm(skinId, skinName, skinImage, skinPrice) {
+            // Защита от множественных вызовов
+            if (isModalOpen) return;
+
+            currentSellSkinId = skinId;
+            isModalOpen = true;
+
+            document.getElementById('sellSkinImage').src = skinImage;
+            document.getElementById('sellSkinName').textContent = skinName;
+            document.getElementById('sellSkinPrice').textContent = skinPrice;
+
+            const modal = document.getElementById('sellConfirmModal');
+            modal.classList.add('modal-show');
+
+            // Блокируем скролл
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideSellConfirm() {
+            const modal = document.getElementById('sellConfirmModal');
+            modal.classList.remove('modal-show');
+
+            currentSellSkinId = null;
+            isModalOpen = false;
+
+            // Разблокируем скролл
+            document.body.style.overflow = '';
+        }
+
+        function confirmSell() {
+            if (!currentSellSkinId) return;
+
+            const skinId = currentSellSkinId;
+            hideSellConfirm();
+
+            fetch('/api/sell_skin', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({skin_id: skinId})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`💰 Скин продан за ${data.price} UC!`);
+                    // Обновляем баланс в шапке
+                    updateHeaderBalance();
+                    // Обновляем инвентарь, если есть функция loadInventory
+                    if (typeof loadInventory === 'function') {
+                        loadInventory();
+                    }
+                } else {
+                    showNotification('Ошибка при продаже скина', 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Ошибка при продаже скина', 'error');
+            });
+        }
+
+        // Закрытие модального окна при клике на фон
+        document.getElementById('sellConfirmModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                hideSellConfirm();
+            }
+        });
+
+        // Закрытие модального окна по Escape
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && isModalOpen) {
+                hideSellConfirm();
+            }
+        });
+
+        // Глобальная функция для обновления баланса (для вызова из других страниц)
+        window.updateHeaderBalance = updateHeaderBalance;
+        window.showNotification = showNotification;
+        window.showSellConfirm = showSellConfirm;
+        window.hideSellConfirm = hideSellConfirm;
+        window.confirmSell = confirmSell;
+    </script>
+</body>
+</html>

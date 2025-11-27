@@ -1,0 +1,982 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="cases-container">
+    <h1 class="text-center mb-4">🎁 Кейсы</h1>
+    
+    <!-- Навигация по категориям -->
+    <div class="categories-nav mb-4">
+        <div class="nav-scroll">
+            <button class="category-btn active" data-category="all">Все кейсы</button>
+            <button class="category-btn" data-category="free">🎁 Бесплатные</button>
+            <button class="category-btn" data-category="starter">🚀 Для новичков</button>
+            <button class="category-btn" data-category="premium">💎 Премиум</button>
+            <button class="category-btn" data-category="legendary">🌟 Легендарные</button>
+            <button class="category-btn" data-category="secret">🕵️ Секретные</button>
+            <button class="category-btn" data-category="vip">👑 VIP</button>
+            <button class="category-btn" data-category="halloween">🎃 Хеллоуин</button>
+            <button class="category-btn" data-category="winter">❄️ Зимние</button>
+        </div>
+    </div>
+
+    <!-- Таймеры для временных кейсов -->
+    <div class="timers-section mb-4">
+        <div class="timer-card halloween-timer" id="halloweenTimer">
+            <div class="timer-icon">🎃</div>
+            <div class="timer-info">
+                <h5>Хеллоуинские кейсы</h5>
+                <div class="timer" id="halloweenTime">07:00:00:00</div>
+                <small>До конца события</small>
+            </div>
+        </div>
+        <div class="timer-card winter-timer" id="winterTimer">
+            <div class="timer-icon">❄️</div>
+            <div class="timer-info">
+                <h5>Зимние кейсы</h5>
+                <div class="timer" id="winterTime">30:00:00:00</div>
+                <small>До конца события</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Раздел: Бесплатные кейсы -->
+    <div class="case-category" data-category="free">
+        <div class="category-header">
+            <h3>🎁 Бесплатные кейсы</h3>
+            <p class="category-description">Открывайте бесплатно каждый день! Идеально для новичков</p>
+        </div>
+        <div class="row">
+            <!-- Бесплатный кейс 1 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=1) }}" class="case-link">
+                    <div class="case-card free-case">
+                        <div class="case-badge free">БЕСПЛАТНО</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/28a745/ffffff?text=Бесплатный+Кейс" class="img-fluid" alt="Бесплатный Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Бесплатный Кейс</h4>
+                            <p>Обычные скины для начала игры</p>
+                            <div class="case-price">
+                                <span class="uc-price free-price">0 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-limitation">
+                            <small>📅 1 раз в день</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Бесплатный кейс 2 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=2) }}" class="case-link">
+                    <div class="case-card free-case">
+                        <div class="case-badge free">БЕСПЛАТНО</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/20c997/ffffff?text=Приветственный" class="img-fluid" alt="Приветственный Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Приветственный</h4>
+                            <p>Подарок для новых игроков</p>
+                            <div class="case-price">
+                                <span class="uc-price free-price">0 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-limitation">
+                            <small>🎁 Только для новичков</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Бесплатный кейс 3 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=3) }}" class="case-link">
+                    <div class="case-card free-case">
+                        <div class="case-badge free">БЕСПЛАТНО</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/17a2b8/ffffff?text=Ежедневный" class="img-fluid" alt="Ежедневный Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Ежедневный Бонус</h4>
+                            <p>Награда за ежедневный вход</p>
+                            <div class="case-price">
+                                <span class="uc-price free-price">0 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-limitation">
+                            <small>⭐ За вход 7 дней подряд</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Раздел: Для новичков -->
+    <div class="case-category" data-category="starter">
+        <div class="category-header">
+            <h3>🚀 Для новичков</h3>
+            <p class="category-description">Недорогие кейсы с хорошей окупаемостью</p>
+        </div>
+        <div class="row">
+            <!-- Кейс для новичков 1 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=4) }}" class="case-link">
+                    <div class="case-card starter-case">
+                        <div class="case-badge starter">НОВИЧОК</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/6f42c1/ffffff?text=Базовый" class="img-fluid" alt="Базовый Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Базовый Кейс</h4>
+                            <p>Отличное начало для новых игроков</p>
+                            <div class="case-price">
+                                <span class="uc-price">50 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>🎯 Окупаемость: 65%</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Кейс для новичков 2 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=5) }}" class="case-link">
+                    <div class="case-card starter-case">
+                        <div class="case-badge starter">НОВИЧОК</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/fd7e14/ffffff?text=Стартовый" class="img-fluid" alt="Стартовый Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Стартовый Кейс</h4>
+                            <p>Первый шаг к большой коллекции</p>
+                            <div class="case-price">
+                                <span class="uc-price">100 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>🎯 Окупаемость: 70%</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Кейс для новичков 3 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=6) }}" class="case-link">
+                    <div class="case-card starter-case">
+                        <div class="case-badge starter">НОВИЧОК</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/e83e8c/ffffff?text=Ученик" class="img-fluid" alt="Кейс Ученика">
+                        </div>
+                        <div class="case-info">
+                            <h4>Кейс Ученика</h4>
+                            <p>Для тех, кто осваивает азы</p>
+                            <div class="case-price">
+                                <span class="uc-price">200 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>🎯 Окупаемость: 75%</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Раздел: Премиум кейсы -->
+    <div class="case-category" data-category="premium">
+        <div class="category-header">
+            <h3>💎 Премиум кейсы</h3>
+            <p class="category-description">Высококачественные скины с хорошими шансами</p>
+        </div>
+        <div class="row">
+            <!-- Премиум кейс 1 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=7) }}" class="case-link">
+                    <div class="case-card premium-case">
+                        <div class="case-badge premium">ПРЕМИУМ</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/007bff/ffffff?text=Премиум" class="img-fluid" alt="Премиум Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Премиум Кейс</h4>
+                            <p>Редкие и эпические скины</p>
+                            <div class="case-price">
+                                <span class="uc-price">500 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>🎯 Окупаемость: 80%</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Премиум кейс 2 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=8) }}" class="case-link">
+                    <div class="case-card premium-case">
+                        <div class="case-badge premium">ПРЕМИУМ</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/6610f2/ffffff?text=Золотой" class="img-fluid" alt="Золотой Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Золотой Кейс</h4>
+                            <p>Исключительные предметы</p>
+                            <div class="case-price">
+                                <span class="uc-price">1,000 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>🎯 Окупаемость: 85%</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Премиум кейс 3 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=9) }}" class="case-link">
+                    <div class="case-card premium-case">
+                        <div class="case-badge premium">ПРЕМИУМ</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/6f42c1/ffffff?text=Платиновый" class="img-fluid" alt="Платиновый Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Платиновый Кейс</h4>
+                            <p>Элитные скины высокого качества</p>
+                            <div class="case-price">
+                                <span class="uc-price">2,000 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>🎯 Окупаемость: 90%</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Раздел: Легендарные кейсы -->
+    <div class="case-category" data-category="legendary">
+        <div class="category-header">
+            <h3>🌟 Легендарные кейсы</h3>
+            <p class="category-description">Шанс получить легендарные и мифические скины</p>
+        </div>
+        <div class="row">
+            <!-- Легендарный кейс 1 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=10) }}" class="case-link">
+                    <div class="case-card legendary-case">
+                        <div class="case-badge legendary">ЛЕГЕНДА</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/ff6b6b/ffffff?text=Легендарный" class="img-fluid" alt="Легендарный Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Легендарный Кейс</h4>
+                            <p>Шанс на легендарные предметы</p>
+                            <div class="case-price">
+                                <span class="uc-price">5,000 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>🎯 Окупаемость: 95%</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Легендарный кейс 2 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=11) }}" class="case-link">
+                    <div class="case-card legendary-case">
+                        <div class="case-badge legendary">ЛЕГЕНДА</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/d63384/ffffff?text=Мифический" class="img-fluid" alt="Мифический Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Мифический Кейс</h4>
+                            <p>Редчайшие скины в игре</p>
+                            <div class="case-price">
+                                <span class="uc-price">10,000 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>🎯 Окупаемость: 110%</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Легендарный кейс 3 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=12) }}" class="case-link">
+                    <div class="case-card legendary-case">
+                        <div class="case-badge legendary">ЛЕГЕНДА</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/fd7e14/ffffff?text=Древний" class="img-fluid" alt="Древний Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Древний Кейс</h4>
+                            <p>Артефакты невероятной силы</p>
+                            <div class="case-price">
+                                <span class="uc-price">25,000 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>🎯 Окупаемость: 150%</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Раздел: Секретные кейсы -->
+    <div class="case-category" data-category="secret">
+        <div class="category-header">
+            <h3>🕵️ Секретные кейсы</h3>
+            <p class="category-description">Особые кейсы с уникальными скинами</p>
+        </div>
+        <div class="row">
+            <!-- Секретный кейс 1 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=13) }}" class="case-link">
+                    <div class="case-card secret-case">
+                        <div class="case-badge secret">СЕКРЕТ</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/20c997/ffffff?text=Загадочный" class="img-fluid" alt="Загадочный Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Загадочный Кейс</h4>
+                            <p>Содержит случайные сюрпризы</p>
+                            <div class="case-price">
+                                <span class="uc-price">1,500 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>🎯 Окупаемость: 70-200%</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Секретный кейс 2 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=14) }}" class="case-link">
+                    <div class="case-card secret-case">
+                        <div class="case-badge secret">СЕКРЕТ</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/6f42c1/ffffff?text=Таинственный" class="img-fluid" alt="Таинственный Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Таинственный Кейс</h4>
+                            <p>Неизвестное содержимое</p>
+                            <div class="case-price">
+                                <span class="uc-price">3,000 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>🎯 Окупаемость: 50-300%</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Секретный кейс 3 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=15) }}" class="case-link">
+                    <div class="case-card secret-case">
+                        <div class="case-badge secret">СЕКРЕТ</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/fd7e14/ffffff?text=Запретный" class="img-fluid" alt="Запретный Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Запретный Кейс</h4>
+                            <p>Только для смелых игроков</p>
+                            <div class="case-price">
+                                <span class="uc-price">7,500 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>🎯 Окупаемость: 10-500%</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Раздел: VIP кейсы -->
+    <div class="case-category" data-category="vip">
+        <div class="category-header">
+            <h3>👑 VIP кейсы</h3>
+            <p class="category-description">Эксклюзивные кейсы для самых требовательных</p>
+        </div>
+        <div class="row">
+            <!-- VIP кейс 1 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=16) }}" class="case-link">
+                    <div class="case-card vip-case">
+                        <div class="case-badge vip">VIP</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/ffd700/000000?text=VIP+Gold" class="img-fluid" alt="VIP Золотой">
+                        </div>
+                        <div class="case-info">
+                            <h4>VIP Золотой</h4>
+                            <p>Элитные скины для избранных</p>
+                            <div class="case-price">
+                                <span class="uc-price">15,000 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>🎯 Гарантия: Легендарный+</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- VIP кейс 2 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=17) }}" class="case-link">
+                    <div class="case-card vip-case">
+                        <div class="case-badge vip">VIP</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/e83e8c/ffffff?text=VIP+Diamond" class="img-fluid" alt="VIP Бриллиантовый">
+                        </div>
+                        <div class="case-info">
+                            <h4>VIP Бриллиантовый</h4>
+                            <p>Невероятно редкие скины</p>
+                            <div class="case-price">
+                                <span class="uc-price">50,000 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>🎯 Гарантия: Мифический+</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- VIP кейс 3 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=18) }}" class="case-link">
+                    <div class="case-card vip-case">
+                        <div class="case-badge vip">VIP</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/00ffff/000000?text=VIP+Platinum" class="img-fluid" alt="VIP Платиновый">
+                        </div>
+                        <div class="case-info">
+                            <h4>VIP Платиновый</h4>
+                            <p>Абсолютная эксклюзивность</p>
+                            <div class="case-price">
+                                <span class="uc-price">100,000 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>🎯 Гарантия: Древний</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Раздел: Хеллоуинские кейсы -->
+    <div class="case-category" data-category="halloween">
+        <div class="category-header">
+            <h3>🎃 Хеллоуинские кейсы</h3>
+            <p class="category-description">Страшные скины на Хеллоуин! Ограниченное время</p>
+        </div>
+        <div class="row">
+            <!-- Хеллоуин кейс 1 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=19) }}" class="case-link">
+                    <div class="case-card halloween-case">
+                        <div class="case-badge halloween">ХЕЛЛОУИН</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/ff8c00/ffffff?text=Тыквенный" class="img-fluid" alt="Тыквенный Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Тыквенный Кейс</h4>
+                            <p>Жуткие скины на Хеллоуин</p>
+                            <div class="case-price">
+                                <span class="uc-price">750 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>⏰ До: 7 дней</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Хеллоуин кейс 2 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=20) }}" class="case-link">
+                    <div class="case-card halloween-case">
+                        <div class="case-badge halloween">ХЕЛЛОУИН</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/8b0000/ffffff?text=Призрачный" class="img-fluid" alt="Призрачный Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Призрачный Кейс</h4>
+                            <p>Мистические предметы</p>
+                            <div class="case-price">
+                                <span class="uc-price">1,500 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>⏰ До: 7 дней</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Хеллоуин кейс 3 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=21) }}" class="case-link">
+                    <div class="case-card halloween-case">
+                        <div class="case-badge halloween">ХЕЛЛОУИН</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/4b0082/ffffff?text=Вампирский" class="img-fluid" alt="Вампирский Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Вампирский Кейс</h4>
+                            <p>Кроваво-красные скины</p>
+                            <div class="case-price">
+                                <span class="uc-price">3,000 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>⏰ До: 7 дней</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Раздел: Зимние кейсы -->
+    <div class="case-category" data-category="winter">
+        <div class="category-header">
+            <h3>❄️ Зимние кейсы</h3>
+            <p class="category-description">Новогодние скины с зимней тематикой</p>
+        </div>
+        <div class="row">
+            <!-- Зимний кейс 1 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=22) }}" class="case-link">
+                    <div class="case-card winter-case">
+                        <div class="case-badge winter">ЗИМА</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/87ceeb/ffffff?text=Снежный" class="img-fluid" alt="Снежный Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Снежный Кейс</h4>
+                            <p>Морозные скины</p>
+                            <div class="case-price">
+                                <span class="uc-price">1,000 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>⏰ До: 30 дней</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Зимний кейс 2 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=23) }}" class="case-link">
+                    <div class="case-card winter-case">
+                        <div class="case-badge winter">ЗИМА</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/00bfff/ffffff?text=Ледяной" class="img-fluid" alt="Ледяной Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Ледяной Кейс</h4>
+                            <p>Холодные синие скины</p>
+                            <div class="case-price">
+                                <span class="uc-price">2,500 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>⏰ До: 30 дней</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Зимний кейс 3 -->
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('case_detail_page', case_id=24) }}" class="case-link">
+                    <div class="case-card winter-case">
+                        <div class="case-badge winter">ЗИМА</div>
+                        <div class="case-image">
+                            <img src="https://via.placeholder.com/300x200/ff69b4/ffffff?text=Новогодний" class="img-fluid" alt="Новогодний Кейс">
+                        </div>
+                        <div class="case-info">
+                            <h4>Новогодний Кейс</h4>
+                            <p>Праздничные скины</p>
+                            <div class="case-price">
+                                <span class="uc-price">5,000 UC</span>
+                            </div>
+                        </div>
+                        <div class="case-stats">
+                            <small>⏰ До: 30 дней</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Фильтрация по категориям
+document.addEventListener('DOMContentLoaded', function() {
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    const caseCategories = document.querySelectorAll('.case-category');
+
+    categoryBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const category = this.getAttribute('data-category');
+
+            // Обновляем активную кнопку
+            categoryBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            // Показываем/скрываем категории
+            caseCategories.forEach(cat => {
+                if (category === 'all' || cat.getAttribute('data-category') === category) {
+                    cat.style.display = 'block';
+                } else {
+                    cat.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Таймеры для временных кейсов
+    function updateTimers() {
+        // Хеллоуин - 7 дней
+        const halloweenEnd = new Date();
+        halloweenEnd.setDate(halloweenEnd.getDate() + 7);
+
+        // Зима - 30 дней
+        const winterEnd = new Date();
+        winterEnd.setDate(winterEnd.getDate() + 30);
+
+        updateTimer('halloweenTime', halloweenEnd);
+        updateTimer('winterTime', winterEnd);
+    }
+
+    function updateTimer(elementId, endDate) {
+        const now = new Date();
+        const diff = endDate - now;
+
+        if (diff <= 0) {
+            document.getElementById(elementId).textContent = '00:00:00:00';
+            return;
+        }
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        document.getElementById(elementId).textContent =
+            `${days.toString().padStart(2, '0')}:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    // Обновляем таймеры каждую секунду
+    updateTimers();
+    setInterval(updateTimers, 1000);
+});
+</script>
+
+<style>
+.cases-container {
+    padding: 20px;
+}
+
+/* Навигация по категориям */
+.categories-nav {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.nav-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 5px;
+}
+
+.category-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #8a2be2;
+    border-radius: 25px;
+    color: white;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.category-btn:hover {
+    background: rgba(138, 43, 226, 0.3);
+    transform: translateY(-2px);
+}
+
+.category-btn.active {
+    background: linear-gradient(45deg, #8a2be2, #4b0082);
+    border-color: #ffd700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+/* Таймеры */
+.timers-section {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.timer-card {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid;
+    border-radius: 10px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+    min-width: 250px;
+}
+
+.halloween-timer {
+    border-color: #ff8c00;
+    background: linear-gradient(45deg, rgba(139, 0, 0, 0.3), rgba(255, 140, 0, 0.3));
+}
+
+.winter-timer {
+    border-color: #87ceeb;
+    background: linear-gradient(45deg, rgba(135, 206, 235, 0.3), rgba(0, 191, 255, 0.3));
+}
+
+.timer-icon {
+    font-size: 32px;
+}
+
+.timer-info h5 {
+    color: white;
+    margin: 0 0 5px 0;
+    font-size: 16px;
+}
+
+.timer {
+    color: #ffd700;
+    font-size: 18px;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+}
+
+.timer-info small {
+    color: #b19cd9;
+    font-size: 12px;
+}
+
+/* Категории кейсов */
+.case-category {
+    margin-bottom: 40px;
+}
+
+.category-header {
+    text-align: center;
+    margin-bottom: 25px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    border: 2px solid #8a2be2;
+}
+
+.category-header h3 {
+    color: #ffd700;
+    margin-bottom: 10px;
+}
+
+.category-description {
+    color: #b19cd9;
+    margin: 0;
+}
+
+/* Бейджи для кейсов */
+.case-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.case-badge.free {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    color: white;
+}
+
+.case-badge.starter {
+    background: linear-gradient(45deg, #6f42c1, #e83e8c);
+    color: white;
+}
+
+.case-badge.premium {
+    background: linear-gradient(45deg, #007bff, #6610f2);
+    color: white;
+}
+
+.case-badge.legendary {
+    background: linear-gradient(45deg, #ff6b6b, #d63384);
+    color: white;
+}
+
+.case-badge.secret {
+    background: linear-gradient(45deg, #20c997, #fd7e14);
+    color: white;
+}
+
+.case-badge.vip {
+    background: linear-gradient(45deg, #ffd700, #ff8c00);
+    color: black;
+}
+
+.case-badge.halloween {
+    background: linear-gradient(45deg, #ff8c00, #8b0000);
+    color: white;
+}
+
+.case-badge.winter {
+    background: linear-gradient(45deg, #87ceeb, #00bfff);
+    color: white;
+}
+
+/* Стили для разных типов кейсов */
+.case-card {
+    position: relative;
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 15px;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.case-card:hover {
+    transform: translateY(-5px);
+    border-color: #b19cd9;
+}
+
+/* Специфичные стили для каждого типа кейсов */
+.free-case {
+    border-color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
+}
+
+.free-case:hover {
+    border-color: #20c997;
+}
+
+.starter-case {
+    border-color: #6f42c1;
+    background: rgba(111, 66, 193, 0.1);
+}
+
+.premium-case {
+    border-color: #007bff;
+    background: rgba(0, 123, 255, 0.1);
+}
+
+.legendary-case {
+    border-color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+}
+
+.secret-case {
+    border-color: #20c997;
+    background: rgba(32, 201, 151, 0.1);
+}
+
+.vip-case {
+    border-color: #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.halloween-case {
+    border-color: #ff8c00;
+    background: rgba(255, 140, 0, 0.1);
+}
+
+.winter-case {
+    border-color: #87ceeb;
+    background: rgba(135, 206, 235, 0.1);
+}
+
+/* Цены */
+.free-price {
+    color: #28a745 !important;
+}
+
+.uc-price {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+/* Ограничения и статистика */
+.case-limitation, .case-stats {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.case-limitation small, .case-stats small {
+    color: #b19cd9;
+    font-size: 12px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .nav-scroll {
+        gap: 5px;
+    }
+
+    .category-btn {
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+
+    .timers-section {
+        flex-direction: column;
+    }
+
+    .timer-card {
+        min-width: 100%;
+    }
+}
+</style>
+{% endblock %}

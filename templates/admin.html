@@ -1,0 +1,827 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-container">
+    <h1 class="text-center mb-4">👑 Админ Панель</h1>
+
+    <div class="row">
+        <!-- Левая часть - управление пользователями -->
+        <div class="col-md-6">
+            <div class="admin-section">
+                <h4>👥 Управление пользователями</h4>
+                
+                <!-- Поиск пользователей -->
+                <div class="search-section mb-3">
+                    <input type="text" class="form-control" id="userSearch" placeholder="Поиск пользователя..." 
+                           oninput="searchUsers(this.value)">
+                    <div class="users-list" id="usersList">
+                        <!-- Список пользователей будет здесь -->
+                    </div>
+                </div>
+
+                <!-- Управление балансом -->
+                <div class="balance-control mb-4">
+                    <h5>💰 Управление балансом</h5>
+                    <div class="row">
+                        <div class="col-8">
+                            <input type="number" class="form-control" id="balanceAmount" placeholder="Сумма UC" min="0">
+                        </div>
+                        <div class="col-4">
+                            <button class="btn btn-success w-100" onclick="setBalance()">Установить</button>
+                        </div>
+                    </div>
+                    <div class="btn-group w-100 mt-2">
+                        <button class="btn btn-primary" onclick="addBalance(100)">+100</button>
+                        <button class="btn btn-primary" onclick="addBalance(1000)">+1000</button>
+                        <button class="btn btn-primary" onclick="addBalance(10000)">+10000</button>
+                    </div>
+                </div>
+
+                <!-- Выдача скинов -->
+                <div class="skin-control mb-4">
+                    <h5>🎁 Выдача скинов</h5>
+                    <select class="form-control mb-2" id="skinSelect">
+                        <option value="">Выберите скин</option>
+                        <!-- Скины будут загружены через JS -->
+                    </select>
+                    <button class="btn btn-warning w-100" onclick="giveSkin()">Выдать скин</button>
+                </div>
+
+                <!-- Блокировка пользователя -->
+                <div class="ban-control mb-4">
+                    <h5>🔨 Управление пользователем</h5>
+                    <div class="btn-group w-100 mb-2">
+                        <button class="btn btn-danger" onclick="banUser()">Заблокировать</button>
+                        <button class="btn btn-success" onclick="unbanUser()">Разблокировать</button>
+                    </div>
+                    <button class="btn btn-dark w-100" onclick="deleteUser()">🗑️ Удалить пользователя</button>
+                </div>
+
+                <!-- Создание тестовых пользователей -->
+                <div class="test-users mb-4">
+                    <h5>🧪 Тестовые пользователи</h5>
+                    <button class="btn btn-info w-100" onclick="createTestUsers()">Создать тестовых пользователей</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая часть - системные функции -->
+        <div class="col-md-6">
+            <div class="admin-section">
+                <h4>⚙️ Системные функции</h4>
+
+                <!-- Статистика системы -->
+                <div class="stats-section mb-4">
+                    <h5>📊 Статистика системы</h5>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span>Всего пользователей</span>
+                            <span id="totalUsers">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span>Всего скинов</span>
+                            <span id="totalSkins">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span>Общий баланс</span>
+                            <span id="totalBalance">0 UC</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary w-100 mt-2" onclick="loadSystemStats()">🔄 Обновить статистику</button>
+                </div>
+
+                <!-- Массовые операции -->
+                <div class="bulk-actions mb-4">
+                    <h5>🎯 Массовые операции</h5>
+                    <button class="btn btn-info w-100 mb-2" onclick="giveAllBonus(100)">Выдать всем +100 UC</button>
+                    <button class="btn btn-info w-100 mb-2" onclick="giveAllBonus(500)">Выдать всем +500 UC</button>
+                    <button class="btn btn-danger w-100 mb-2" onclick="resetAllInventories()">🗑️ Очистить все инвентари</button>
+                    <button class="btn btn-success w-100" onclick="generateDailyRewards()">🎁 Выдать ежедневные награды</button>
+                </div>
+
+                <!-- Управление кейсами -->
+                <div class="case-control mb-4">
+                    <h5>🎁 Управление кейсами</h5>
+                    <select class="form-control mb-2" id="caseSelect">
+                        <option value="1">Базовый Кейс (100 UC)</option>
+                        <option value="2">Премиум Кейс (500 UC)</option>
+                        <option value="3">Легендарный Кейс (1000 UC)</option>
+                    </select>
+                    <button class="btn btn-primary w-100" onclick="modifyCaseChances()">Изменить шансы</button>
+                </div>
+
+                <!-- Экспорт данных -->
+                <div class="export-section">
+                    <h5>📤 Экспорт данных</h5>
+                    <button class="btn btn-secondary w-100 mb-2" onclick="exportUsers()">Экспорт пользователей</button>
+                    <button class="btn btn-secondary w-100" onclick="exportTransactions()">Экспорт транзакций</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Логи действий -->
+    <div class="admin-section mt-4">
+        <h4>📝 Логи действий</h4>
+        <div class="logs-container" id="actionLogs">
+            <div class="log-entry">
+                <span class="log-time">{{ now.strftime('%H:%M:%S') if now else '' }}</span>
+                <span class="log-message">Админ панель загружена</span>
+            </div>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary mt-2" onclick="clearLogs()">Очистить логи</button>
+    </div>
+</div>
+
+<script>
+let allUsers = [];
+let allSkins = [];
+let selectedUserId = null;
+let selectedUserName = null;
+
+// Загрузка данных при открытии страницы
+document.addEventListener('DOMContentLoaded', function() {
+    loadAllUsers();
+    loadAllSkins();
+    loadSystemStats();
+    addToLog('Админ панель инициализирована');
+});
+
+// Загрузка всех пользователей
+function loadAllUsers() {
+    fetch('/api/admin/get_users')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.users && Array.isArray(data.users)) {
+                allUsers = data.users;
+                displayUsers(allUsers);
+                addToLog('Загружен список пользователей');
+            } else {
+                throw new Error('Invalid data format: users array not found');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading users:', error);
+            showNotification('Ошибка загрузки пользователей: ' + error.message, 'error');
+            addToLog('Ошибка загрузки пользователей: ' + error.message);
+        });
+}
+
+// Загрузка всех скинов
+function loadAllSkins() {
+    fetch('/api/admin/get_all_skins')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.skins && Array.isArray(data.skins)) {
+                allSkins = data.skins;
+                populateSkinSelect();
+                addToLog('Загружен список скинов');
+            } else {
+                throw new Error('Invalid data format: skins array not found');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading skins:', error);
+            showNotification('Ошибка загрузки скинов', 'error');
+            addToLog('Ошибка загрузки скинов: ' + error.message);
+        });
+}
+
+// Загрузка статистики системы
+function loadSystemStats() {
+    fetch('/api/admin/system_stats')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.total_users !== undefined && data.total_skins !== undefined && data.total_balance !== undefined) {
+                document.getElementById('totalUsers').textContent = data.total_users;
+                document.getElementById('totalSkins').textContent = data.total_skins;
+                document.getElementById('totalBalance').textContent = data.total_balance.toLocaleString() + ' UC';
+                addToLog('Обновлена статистика системы');
+            } else {
+                throw new Error('Invalid stats data');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading stats:', error);
+            showNotification('Ошибка загрузки статистики', 'error');
+            addToLog('Ошибка загрузки статистики: ' + error.message);
+        });
+}
+
+// Поиск пользователей
+function searchUsers(query) {
+    if (!query) {
+        displayUsers(allUsers);
+        return;
+    }
+
+    const filteredUsers = allUsers.filter(user =>
+        user.username.toLowerCase().includes(query.toLowerCase())
+    );
+    displayUsers(filteredUsers);
+}
+
+// Отображение списка пользователей
+function displayUsers(users) {
+    const usersList = document.getElementById('usersList');
+    usersList.innerHTML = '';
+
+    if (!users || !Array.isArray(users) || users.length === 0) {
+        usersList.innerHTML = '<div class="text-center p-3 text-muted">Пользователи не найдены</div>';
+        return;
+    }
+
+    users.forEach(user => {
+        const userElement = document.createElement('div');
+        userElement.className = `user-item ${selectedUserId === user.id ? 'selected' : ''}`;
+        userElement.onclick = () => selectUser(user);
+        userElement.innerHTML = `
+            <div class="user-info">
+                <strong>${user.username}</strong>
+                <span class="user-balance">${user.balance} UC</span>
+            </div>
+            <div class="user-stats">
+                <small>Скинов: ${user.skin_count || 0}</small>
+                <small class="${user.is_banned ? 'text-danger' : 'text-success'}">
+                    ${user.is_banned ? '🔴 Заблокирован' : '🟢 Активен'}
+                </small>
+            </div>
+        `;
+        usersList.appendChild(userElement);
+    });
+}
+
+// Выбор пользователя
+function selectUser(user) {
+    selectedUserId = user.id;
+    selectedUserName = user.username;
+    displayUsers(allUsers);
+    addToLog(`Выбран пользователь: ${user.username} (ID: ${user.id})`);
+}
+
+// Заполнение выбора скинов
+function populateSkinSelect() {
+    const skinSelect = document.getElementById('skinSelect');
+    skinSelect.innerHTML = '<option value="">Выберите скин</option>';
+
+    // Сортируем скины по цене
+    const sortedSkins = allSkins.sort((a, b) => b.price - a.price);
+
+    sortedSkins.forEach(skin => {
+        const option = document.createElement('option');
+        option.value = skin.id;
+        option.textContent = `${skin.name} - ${skin.price} UC (${skin.rarity})`;
+        skinSelect.appendChild(option);
+    });
+}
+
+// Установка баланса
+function setBalance() {
+    if (!selectedUserId) {
+        showNotification('Выберите пользователя!', 'error');
+        return;
+    }
+
+    const amount = parseInt(document.getElementById('balanceAmount').value);
+    if (!amount || amount < 0) {
+        showNotification('Введите корректную сумму!', 'error');
+        return;
+    }
+
+    fetch('/api/admin/set_balance', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            user_id: selectedUserId,
+            amount: amount
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`Баланс установлен: ${amount} UC для ${selectedUserName}`);
+            addToLog(`Установлен баланс ${amount} UC для пользователя: ${selectedUserName}`);
+            loadAllUsers();
+            document.getElementById('balanceAmount').value = '';
+        } else {
+            showNotification('Ошибка установки баланса', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка установки баланса', 'error');
+        addToLog('Ошибка установки баланса: ' + error.message);
+    });
+}
+
+// Добавление баланса
+function addBalance(amount) {
+    if (!selectedUserId) {
+        showNotification('Выберите пользователя!', 'error');
+        return;
+    }
+
+    fetch('/api/admin/add_balance', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            user_id: selectedUserId,
+            amount: amount
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`Добавлено ${amount} UC пользователю ${selectedUserName}`);
+            addToLog(`Добавлено ${amount} UC пользователю: ${selectedUserName}`);
+            loadAllUsers();
+        } else {
+            showNotification('Ошибка добавления баланса', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка добавления баланса', 'error');
+        addToLog('Ошибка добавления баланса: ' + error.message);
+    });
+}
+
+// Выдача скина
+function giveSkin() {
+    if (!selectedUserId) {
+        showNotification('Выберите пользователя!', 'error');
+        return;
+    }
+
+    const skinId = document.getElementById('skinSelect').value;
+    if (!skinId) {
+        showNotification('Выберите скин!', 'error');
+        return;
+    }
+
+    const skin = allSkins.find(s => s.id == skinId);
+    if (!skin) {
+        showNotification('Скин не найден!', 'error');
+        return;
+    }
+
+    fetch('/api/admin/give_skin', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            user_id: selectedUserId,
+            skin_id: parseInt(skinId)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`Скин "${skin.name}" выдан пользователю ${selectedUserName}`);
+            addToLog(`Выдан скин "${skin.name}" пользователю: ${selectedUserName}`);
+        } else {
+            showNotification('Ошибка выдачи скина', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка выдачи скина', 'error');
+        addToLog('Ошибка выдачи скина: ' + error.message);
+    });
+}
+
+// Блокировка пользователя
+function banUser() {
+    if (!selectedUserId) {
+        showNotification('Выберите пользователя!', 'error');
+        return;
+    }
+
+    if (!confirm(`Заблокировать пользователя ${selectedUserName}?`)) {
+        return;
+    }
+
+    fetch('/api/admin/ban_user', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            user_id: selectedUserId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`Пользователь ${selectedUserName} заблокирован!`);
+            addToLog(`Заблокирован пользователь: ${selectedUserName}`);
+            loadAllUsers();
+        } else {
+            showNotification('Ошибка блокировки пользователя', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка блокировки пользователя', 'error');
+        addToLog('Ошибка блокировки пользователя: ' + error.message);
+    });
+}
+
+// Разблокировка пользователя
+function unbanUser() {
+    if (!selectedUserId) {
+        showNotification('Выберите пользователя!', 'error');
+        return;
+    }
+
+    fetch('/api/admin/unban_user', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            user_id: selectedUserId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`Пользователь ${selectedUserName} разблокирован!`);
+            addToLog(`Разблокирован пользователь: ${selectedUserName}`);
+            loadAllUsers();
+        } else {
+            showNotification('Ошибка разблокировки пользователя', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка разблокировки пользователя', 'error');
+        addToLog('Ошибка разблокировки пользователя: ' + error.message);
+    });
+}
+
+// Удаление пользователя
+function deleteUser() {
+    if (!selectedUserId) {
+        showNotification('Выберите пользователя!', 'error');
+        return;
+    }
+
+    if (!confirm(`ВНИМАНИЕ! Удалить пользователя ${selectedUserName}? Это действие нельзя отменить!`)) {
+        return;
+    }
+
+    fetch('/api/admin/delete_user', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            user_id: selectedUserId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`Пользователь ${selectedUserName} удален!`);
+            addToLog(`Удален пользователь: ${selectedUserName}`);
+            selectedUserId = null;
+            selectedUserName = null;
+            loadAllUsers();
+        } else {
+            showNotification(data.error || 'Ошибка удаления пользователя', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка удаления пользователя', 'error');
+        addToLog('Ошибка удаления пользователя: ' + error.message);
+    });
+}
+
+// Создание тестовых пользователей
+function createTestUsers() {
+    if (!confirm('Создать тестовых пользователей?')) {
+        return;
+    }
+
+    fetch('/api/admin/create_test_users', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`Создано ${data.created_count} тестовых пользователей`);
+            addToLog(`Создано тестовых пользователей: ${data.created_count}`);
+            loadAllUsers();
+        } else {
+            showNotification('Ошибка создания тестовых пользователей', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка создания тестовых пользователей', 'error');
+        addToLog('Ошибка создания тестовых пользователей: ' + error.message);
+    });
+}
+
+// Массовая выдача бонуса
+function giveAllBonus(amount) {
+    if (!confirm(`Выдать всем пользователям по ${amount} UC?`)) {
+        return;
+    }
+
+    fetch('/api/admin/give_all_bonus', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            amount: amount
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`Всем пользователям выдано по ${amount} UC!`);
+            addToLog(`Массовая выдача ${amount} UC всем пользователям`);
+            loadAllUsers();
+            loadSystemStats();
+        } else {
+            showNotification('Ошибка массовой выдачи бонуса', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка массовой выдачи бонуса', 'error');
+        addToLog('Ошибка массовой выдачи бонуса: ' + error.message);
+    });
+}
+
+// Очистка всех инвентарей
+function resetAllInventories() {
+    if (!confirm('ВНИМАНИЕ! Очистить ВСЕ инвентари? Это действие нельзя отменить!')) {
+        return;
+    }
+
+    fetch('/api/admin/reset_all_inventories', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Все инвентари очищены!');
+            addToLog('Очищены все инвентари пользователей');
+            loadSystemStats();
+        } else {
+            showNotification('Ошибка очистки инвентарей', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка очистки инвентарей', 'error');
+        addToLog('Ошибка очистки инвентарей: ' + error.message);
+    });
+}
+
+// Генерация ежедневных наград
+function generateDailyRewards() {
+    if (!confirm('Выдать ежедневные награды всем пользователям?')) {
+        return;
+    }
+
+    fetch('/api/admin/generate_daily_rewards', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Ежедневные награды выданы всем пользователям!');
+            addToLog('Выданы ежедневные награды всем пользователям');
+            loadAllUsers();
+            loadSystemStats();
+        } else {
+            showNotification('Ошибка выдачи наград', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка выдачи наград', 'error');
+        addToLog('Ошибка выдачи наград: ' + error.message);
+    });
+}
+
+// Изменение шансов кейсов
+function modifyCaseChances() {
+    const caseId = document.getElementById('caseSelect').value;
+    showNotification('Функция изменения шансов кейсов в разработке', 'error');
+    addToLog('Запрос на изменение шансов кейса ID: ' + caseId);
+}
+
+// Экспорт пользователей
+function exportUsers() {
+    fetch('/api/admin/export_users')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Данные пользователей готовы для экспорта');
+                addToLog('Экспортированы данные пользователей');
+                console.log('Users data:', data.data);
+            } else {
+                showNotification('Ошибка экспорта пользователей', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Ошибка экспорта пользователей', 'error');
+            addToLog('Ошибка экспорта пользователей: ' + error.message);
+        });
+}
+
+// Экспорт транзакций
+function exportTransactions() {
+    fetch('/api/admin/export_transactions')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Данные транзакций готовы для экспорта');
+                addToLog('Экспортированы данные транзакций');
+            } else {
+                showNotification('Ошибка экспорта транзакций', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Ошибка экспорта транзакций', 'error');
+            addToLog('Ошибка экспорта транзакций: ' + error.message);
+        });
+}
+
+// Загрузка статистики системы
+function loadSystemStats() {
+    fetch('/api/admin/system_stats')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('totalUsers').textContent = data.total_users;
+            document.getElementById('totalSkins').textContent = data.total_skins;
+            document.getElementById('totalBalance').textContent = data.total_balance.toLocaleString() + ' UC';
+            addToLog('Обновлена статистика системы');
+        })
+        .catch(error => {
+            showNotification('Ошибка загрузки статистики', 'error');
+            addToLog('Ошибка загрузки статистики: ' + error.message);
+        });
+}
+
+// Добавление лога действий
+function addToLog(message) {
+    const logsContainer = document.getElementById('actionLogs');
+    const logEntry = document.createElement('div');
+    logEntry.className = 'log-entry';
+    logEntry.innerHTML = `
+        <span class="log-time">${new Date().toLocaleTimeString()}</span>
+        <span class="log-message">${message}</span>
+    `;
+    logsContainer.insertBefore(logEntry, logsContainer.firstChild);
+}
+
+// Очистка логов
+function clearLogs() {
+    const logsContainer = document.getElementById('actionLogs');
+    logsContainer.innerHTML = '<div class="log-entry"><span class="log-time">' + new Date().toLocaleTimeString() + '</span><span class="log-message">Логи очищены</span></div>';
+}
+</script>
+
+<style>
+.admin-container {
+    padding: 20px;
+}
+
+.admin-section {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.search-section {
+    position: relative;
+}
+
+.users-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 10px;
+    border: 1px solid #8a2be2;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.user-item {
+    padding: 10px;
+    border-bottom: 1px solid #8a2be2;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.user-item:hover {
+    background: rgba(138, 43, 226, 0.2);
+}
+
+.user-item.selected {
+    background: rgba(138, 43, 226, 0.4);
+    border-left: 4px solid #ffd700;
+}
+
+.user-item:last-child {
+    border-bottom: none;
+}
+
+.user-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-balance {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.user-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #b19cd9;
+    margin-top: 5px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.stat-card {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #8a2be2;
+}
+
+.stat-card span:first-child {
+    display: block;
+    color: #b19cd9;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.stat-card span:last-child {
+    display: block;
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.logs-container {
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #8a2be2;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.log-entry {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid #8a2be2;
+    font-size: 12px;
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-time {
+    color: #ffd700;
+    font-weight: bold;
+    min-width: 80px;
+}
+
+.log-message {
+    color: #b19cd9;
+    flex: 1;
+    margin-left: 10px;
+}
+
+.btn-group .btn {
+    margin: 0 2px;
+}
+
+.text-danger { color: #dc3545 !important; }
+.text-success { color: #28a745 !important; }
+.text-muted { color: #6c757d !important; }
+</style>
+{% endblock %}

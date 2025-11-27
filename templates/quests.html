@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="quests-container">
+    <h1 class="text-center mb-4">🎯 Ежедневные квесты</h1>
+    
+    <div class="row">
+        <!-- Список квестов -->
+        <div class="col-md-8">
+            <div class="quests-main">
+                <div class="quests-header mb-4">
+                    <h3>📋 Доступные задания</h3>
+                    <p class="text-muted">Выполняйте задания чтобы получать UC</p>
+                </div>
+
+                <div class="quests-list">
+                    {% for quest in quests %}
+                    <div class="quest-item" data-quest-id="{{ quest.id }}"
+                         data-completed="{{ 'true' if quest.is_completed else 'false' }}"
+                         data-reward-claimed="{{ 'true' if quest.completed_at else 'false' }}">
+                        <div class="quest-icon">
+                            {% if quest.quest_type == 'open_cases' %}🎁
+                            {% elif quest.quest_type == 'play_plane' %}✈️
+                            {% elif quest.quest_type == 'open_safe_cells' %}💣
+                            {% elif quest.quest_type == 'craft_skins' %}🔨
+                            {% elif quest.quest_type == 'upgrade_skin' %}⚡
+                            {% elif quest.quest_type == 'consecutive_logins' %}💰
+                            {% else %}🎯{% endif %}
+                        </div>
+                        <div class="quest-info">
+                            <h5>{{ quest.title }}</h5>
+                            <p>{{ quest.description }}</p>
+                            <div class="quest-progress">
+                                <div class="progress">
+                                    <div class="progress-bar" style="width: {{ (quest.current_value / quest.target_value * 100) if quest.target_value > 0 else 0 }}%"></div>
+                                </div>
+                                <span>{{ quest.current_value }}/{{ quest.target_value }} выполнено</span>
+                            </div>
+                        </div>
+                        <div class="quest-reward">
+                            <span class="reward-amount">{{ quest.reward_amount }} UC</span>
+                            {% if quest.completed_at %}
+                                <button class="btn btn-quest btn-success" disabled>✅ Получено</button>
+                            {% elif quest.is_completed %}
+                                <button class="btn btn-quest btn-warning" onclick="claimQuestReward({{ quest.id }})">💰 Забрать награду</button>
+                            {% else %}
+                                <button class="btn btn-quest btn-primary" onclick="completeQuest({{ quest.id }})">🎯 Перейти</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Боковая панель -->
+        <div class="col-md-4">
+            <div class="quests-sidebar">
+                <div class="stats-card mb-4">
+                    <h5>📊 Прогресс квестов</h5>
+                    <div class="stats-grid">
+                        <div class="stat">
+                            <span>Выполнено сегодня:</span>
+                            <strong>
+                                {% set completed_today = namespace(count=0) %}
+                                {% for quest in quests %}
+                                    {% if quest.completed_at %}
+                                        {% set completed_date = quest.completed_at.split()[0] if quest.completed_at else '' %}
+                                        {% if completed_date == current_date %}
+                                            {% set completed_today.count = completed_today.count + 1 %}
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ completed_today.count }}/{{ quests|length }}
+                            </strong>
+                        </div>
+                        <div class="stat">
+                            <span>Всего получено:</span>
+                            <strong>
+                                {% set total_reward = namespace(value=0) %}
+                                {% for quest in quests %}
+                                    {% if quest.completed_at %}
+                                        {% set total_reward.value = total_reward.value + quest.reward_amount %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ total_reward.value }} UC
+                            </strong>
+                        </div>
+                        <div class="stat">
+                            <span>Текущая серия:</span>
+                            <strong>{{ stats.consecutive_logins }} дней</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="daily-bonus-card mb-4">
+                    <h5>🎁 Ежедневный бонус</h5>
+                    <div class="bonus-info">
+                        <p>За выполнение всех квестов за день:</p>
+                        <div class="bonus-amount">+2,000 UC</div>
+                        <div class="bonus-progress">
+                            <div class="progress">
+                                {% set completed_count = quests|selectattr('is_completed')|list|length %}
+                                <div class="progress-bar bg-warning" style="width: {{ (completed_count / quests|length * 100) if quests|length > 0 else 0 }}%"></div>
+                            </div>
+                            <small>{{ completed_count }}/{{ quests|length }} квестов выполнено</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="achievements-card">
+                    <h5>🏆 Достижения</h5>
+                    <div class="achievement-item {% if stats.total_cases_opened >= 10 %}completed{% endif %}">
+                        <span class="achievement-icon">🎯</span>
+                        <span class="achievement-text">Первый квест (10 кейсов)</span>
+                        <span class="achievement-badge">{% if stats.total_cases_opened >= 10 %}✅{% else %}🔒{% endif %}</span>
+                    </div>
+                    <div class="achievement-item {% if stats.total_plane_games >= 5 %}completed{% endif %}">
+                        <span class="achievement-icon">✈️</span>
+                        <span class="achievement-text">Пилот (5 игр в Самолет)</span>
+                        <span class="achievement-badge">{% if stats.total_plane_games >= 5 %}✅{% else %}🔒{% endif %}</span>
+                    </div>
+                    <div class="achievement-item {% if stats.total_safe_cells >= 50 %}completed{% endif %}">
+                        <span class="achievement-icon">💎</span>
+                        <span class="achievement-text">Мастер квестов (50 клеток)</span>
+                        <span class="achievement-badge">{% if stats.total_safe_cells >= 50 %}✅{% else %}🔒{% endif %}</span>
+                    </div>
+                    <div class="achievement-item {% if stats.consecutive_logins >= 7 %}completed{% endif %}">
+                        <span class="achievement-icon">⭐</span>
+                        <span class="achievement-text">7 дней подряд</span>
+                        <span class="achievement-badge">{% if stats.consecutive_logins >= 7 %}✅{% else %}🔒{% endif %}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function completeQuest(questId) {
+    playSound('clickSound');
+
+    const redirects = {
+        1: '/cases',
+        2: '/plane',
+        3: '/mines',
+        4: '/craft',
+        5: '/upgrade',
+        6: '/calendar'
+    };
+
+    if (redirects[questId]) {
+        window.location.href = redirects[questId];
+    } else {
+        // Для других квестов
+        window.location.href = '/cases';
+    }
+}
+
+function claimQuestReward(questId) {
+    playSound('clickSound');
+
+    fetch('/api/claim_quest_reward', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({quest_id: questId})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`🎉 Вы получили ${data.reward} UC за выполнение квеста!`, 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            showNotification(data.error || 'Ошибка при получении награды', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка при получении награды', 'error');
+    });
+}
+
+// Обновляем статистику каждые 30 секунд
+setInterval(() => {
+    // Только обновляем данные, не перезагружаем страницу полностью
+    fetch('/quests')
+        .then(response => response.text())
+        .then(html => {
+            // Можно добавить более точное обновление только прогресса
+            // Пока просто обновляем страницу если нужно
+            const currentScroll = window.scrollY;
+            location.reload();
+            window.scrollTo(0, currentScroll);
+        });
+}, 30000);
+
+// Добавляем звуки на все кнопки квестов
+document.addEventListener('DOMContentLoaded', function() {
+    const questButtons = document.querySelectorAll('.btn-quest');
+    questButtons.forEach(button => {
+        button.addEventListener('click', () => playSound('clickSound'));
+    });
+});
+</script>
+
+<style>
+.quests-container {
+    padding: 20px;
+}
+
+.quests-main {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.quests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.quest-item {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 15px;
+    transition: all 0.3s ease;
+}
+
+.quest-item:hover {
+    border-color: #ffd700;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 215, 0, 0.2);
+}
+
+.quest-icon {
+    font-size: 24px;
+    margin-right: 15px;
+    min-width: 40px;
+    text-align: center;
+}
+
+.quest-info {
+    flex: 1;
+}
+
+.quest-info h5 {
+    color: white;
+    margin-bottom: 5px;
+}
+
+.quest-info p {
+    color: #b19cd9;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.quest-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.progress {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.quest-progress span {
+    color: #ffd700;
+    font-size: 12px;
+    font-weight: bold;
+    min-width: 80px;
+}
+
+.quest-reward {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 120px;
+}
+
+.reward-amount {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.btn-quest {
+    border: none;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    width: 100%;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #8a2be2, #4b0082);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(45deg, #9b4dff, #5a00a8);
+    transform: translateY(-2px);
+}
+
+.btn-warning {
+    background: linear-gradient(45deg, #ffc107, #fd7e14);
+}
+
+.btn-warning:hover {
+    background: linear-gradient(45deg, #ffca2c, #fd9843);
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.quests-sidebar {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.stats-card, .daily-bonus-card, .achievements-card {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #8a2be2;
+}
+
+.stats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.stat {
+    display: flex;
+    justify-content: space-between;
+    color: white;
+    font-size: 14px;
+}
+
+.stat strong {
+    color: #ffd700;
+}
+
+.bonus-info {
+    text-align: center;
+}
+
+.bonus-amount {
+    font-size: 20px;
+    color: #ffd700;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.bonus-progress {
+    margin-top: 10px;
+}
+
+.achievement-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    border: 1px solid #8a2be2;
+}
+
+.achievement-item.completed {
+    background: rgba(40, 167, 69, 0.2);
+    border-color: #28a745;
+}
+
+.achievement-icon {
+    font-size: 18px;
+    margin-right: 10px;
+}
+
+.achievement-text {
+    flex: 1;
+    color: white;
+    font-size: 14px;
+}
+
+.achievement-badge {
+    color: #28a745;
+}
+
+.achievement-item:not(.completed) .achievement-badge {
+    color: #6c757d;
+}
+
+.bg-warning {
+    background: linear-gradient(45deg, #ffc107, #fd7e14) !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+</style>
+{% endblock %}

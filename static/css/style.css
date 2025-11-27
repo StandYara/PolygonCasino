@@ -1,0 +1,503 @@
+body {
+    background: linear-gradient(135deg, #0f0f0f 0%, #1a0a2e 50%, #0f0f0f 100%);
+    color: #ffffff;
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+.main-nav {
+    background: linear-gradient(90deg, #1a1a1a 0%, #2d1b69 50%, #1a1a1a 100%);
+    border-bottom: 2px solid #8a2be2;
+    padding: 12px 0;
+}
+
+.navbar-brand {
+    color: #ffffff !important;
+    font-weight: bold;
+    font-size: 24px;
+    margin-left: 20px;
+}
+
+.nav-link {
+    color: #ffffff !important;
+    margin: 0 15px;
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+    color: #b19cd9 !important;
+}
+
+.container {
+    background: rgba(25, 25, 35, 0.8);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    border: 1px solid #8a2be2;
+}
+
+/* Стили для кейсов */
+.case-link {
+    text-decoration: none;
+}
+
+.case-link:hover .case-card {
+    transform: translateY(-5px);
+    border-color: #b19cd9;
+}
+
+.case-card {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 15px;
+    transition: transform 0.3s ease;
+    height: 100%;
+}
+
+.case-card:hover {
+    transform: translateY(-5px);
+    border-color: #b19cd9;
+}
+
+.case-image {
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.case-info h4 {
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+.case-info p {
+    color: #b19cd9;
+    margin-bottom: 15px;
+}
+
+.case-price {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.uc-price {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #8a2be2, #4b0082);
+    border: none;
+    border-radius: 5px;
+    padding: 8px 20px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(45deg, #9b4dff, #5a00a8);
+    transform: scale(1.05);
+}
+
+/* Стили для страницы кейса */
+.case-info-sidebar {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 20px;
+    position: sticky;
+    top: 20px;
+}
+
+.case-price-large .uc-price {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 24px;
+    display: block;
+    text-align: center;
+    margin: 15px 0;
+}
+
+.btn-open-case {
+    background: linear-gradient(45deg, #8a2be2, #4b0082);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    padding: 12px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.btn-open-case:hover {
+    background: linear-gradient(45deg, #9b4dff, #5a00a8);
+    transform: scale(1.05);
+}
+
+/* Шансы */
+.chances-list {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.chance-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 5px 0;
+}
+
+.rarity {
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.rarity.common { background: #6c757d; color: white; }
+.rarity.rare { background: #007bff; color: white; }
+.rarity.epic { background: #8a2be2; color: white; }
+.rarity.legendary { background: #ff6b6b; color: white; }
+
+.chance-percent {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+/* Рулетка */
+.roulette-container {
+    position: relative;
+    text-align: center;
+}
+
+.roulette-wrapper {
+    position: relative;
+    overflow: hidden;
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 20px 0;
+    height: 200px;
+    width: 100%;
+}
+
+.roulette-wheel {
+    display: flex;
+    transition: transform 3s cubic-bezier(0.1, 0.1, 0.1, 1);
+    height: 100%;
+    align-items: center;
+    width: max-content;
+}
+
+.roulette-item {
+    min-width: 150px;
+    height: 150px;
+    margin: 0 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #8a2be2;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.roulette-item img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+}
+
+.roulette-item .skin-name {
+    font-size: 12px;
+    margin-top: 5px;
+    text-align: center;
+    color: #ffffff;
+}
+
+.roulette-pointer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, #ffd700, transparent);
+    z-index: 10;
+}
+
+.roulette-pointer::before {
+    content: '▼';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ffd700;
+    font-size: 24px;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+}
+
+.won-skin {
+    background: rgba(45, 27, 105, 0.5);
+    border: 2px solid #ffd700;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { border-color: #ffd700; }
+    50% { border-color: #ff6b6b; }
+    100% { border-color: #ffd700; }
+}
+
+.skin-card {
+    text-align: center;
+    padding: 15px;
+}
+
+.skin-card img {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    border: 2px solid #8a2be2;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+}
+/* Кнопки действий */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.btn-save {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+}
+
+.btn-sell {
+    background: linear-gradient(45deg, #ffc107, #fd7e14);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+}
+
+/* Инвентарь */
+.inventory-skin-card {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.inventory-skin-card:hover {
+    transform: translateY(-5px);
+    border-color: #b19cd9;
+}
+
+.inventory-skin-card img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin-bottom: 10px;
+}
+
+.stat-card {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+}
+
+.uc-balance {
+    color: #ffd700;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.skin-count {
+    color: #8a2be2;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.btn-sell-inventory {
+    background: linear-gradient(45deg, #ffc107, #fd7e14);
+    border: none;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 5px;
+    font-size: 12px;
+    width: 100%;
+}
+/* Авторизация */
+.auth-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    padding: 20px;
+}
+
+.auth-card {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 30px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.balance-container {
+    margin-right: 20px;
+}
+
+.balance-text {
+    color: #ffd700 !important;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+/* Формы */
+.form-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #8a2be2;
+    color: white;
+}
+
+.form-control:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #b19cd9;
+    color: white;
+    box-shadow: 0 0 0 0.2rem rgba(138, 43, 226, 0.25);
+}
+
+.form-label {
+    color: #ffffff;
+}
+
+/* Выпадающее меню */
+.dropdown-menu {
+    background: rgba(45, 27, 105, 0.9);
+    border: 1px solid #8a2be2;
+}
+
+.dropdown-item {
+    color: #ffffff;
+}
+
+.dropdown-item:hover {
+    background: rgba(138, 43, 226, 0.3);
+    color: #ffffff;
+}
+/* Уведомления */
+.notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    transition: all 0.3s ease;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.notification-show {
+    opacity: 1 !important;
+    visibility: visible !important;
+    top: 30px !important;
+}
+
+.notification-content {
+    background: linear-gradient(45deg, #8a2be2, #4b0082);
+    color: white;
+    padding: 15px 30px;
+    border-radius: 25px;
+    border: 2px solid #ffd700;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    font-weight: bold;
+    text-align: center;
+    min-width: 300px;
+}
+
+.notification-success .notification-content {
+    background: linear-gradient(45deg, #28a745, #20c997);
+}
+
+.notification-error .notification-content {
+    background: linear-gradient(45deg, #dc3545, #fd7e14);
+}
+
+.notification-hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+.skin-rarity {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+.skin-rarity.common {
+    background: #6c757d;
+    color: white;
+}
+
+.skin-rarity.rare {
+    background: #007bff;
+    color: white;
+}
+
+.skin-rarity.epic {
+    background: #8a2be2;
+    color: white;
+}
+
+.skin-rarity.legendary {
+    background: #ff6b6b;
+    color: white;
+}
+
+.skin-rarity.mythical {
+    background: #ff00ff;
+    color: white;
+}
+
+.skin-rarity.ancient {
+    background: #00ffff;
+    color: black;
+}
+
+.chance-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.chance-70 { background: #28a745; color: white; }
+.chance-50 { background: #ffc107; color: black; }
+.chance-30 { background: #fd7e14; color: white; }
+.chance-15 { background: #dc3545; color: white; }

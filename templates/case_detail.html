@@ -1,0 +1,828 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="case-detail-container">
+    <div class="row">
+        <!-- Левая часть - информация о кейсе -->
+        <div class="col-md-4">
+            <div class="case-info-sidebar">
+                <div class="case-image mb-3">
+                    <img src="https://via.placeholder.com/300x200/2d1b69/ffffff?text=Кейс+{{ case_id }}" class="img-fluid" alt="Кейс {{ case_id }}">
+                </div>
+                <h2 id="caseTitle">
+                    <!-- Заголовок будет установлен через JS -->
+                </h2>
+                <p class="case-description" id="caseDescription">
+                    <!-- Описание будет установлено через JS -->
+                </p>
+                <div class="case-price-large">
+                    <span class="uc-price" id="casePrice">
+                        <!-- Цена будет установлена через JS -->
+                    </span>
+                </div>
+
+                <!-- Для бесплатных кейсов показываем статус доступности -->
+                <div class="free-case-info" id="freeCaseInfo" style="display: none;">
+                    <div class="availability-status" id="availabilityStatus"></div>
+                    <small class="text-muted" id="freeCaseHint"></small>
+                </div>
+
+                <button class="btn btn-open-case" id="openCaseBtn">Открыть кейс</button>
+
+                <!-- Шансы -->
+                <div class="chances-list mt-4">
+                    <h5>🎰 Шансы выпадения:</h5>
+                    <div id="chancesList">
+                        <!-- Шансы будут загружены через JS -->
+                    </div>
+                </div>
+
+                <div class="case-value mt-4">
+                    <h5>💰 Ценность кейса:</h5>
+                    <div class="value-info" id="valueInfo">
+                        <!-- Информация о ценности будет через JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая часть - рулетка -->
+        <div class="col-md-8">
+            <div class="roulette-container">
+                <h3 class="text-center mb-4">🎡 Рулетка</h3>
+                <div class="roulette-wrapper">
+                    <div class="roulette-wheel" id="rouletteWheel">
+                        <!-- Скины будут добавляться через JS -->
+                    </div>
+                    <div class="roulette-pointer"></div>
+                </div>
+                <div id="result" class="mt-4 text-center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Данные о кейсах
+const caseData = {
+    // Бесплатные кейсы
+    1: {
+        title: 'Бесплатный Кейс',
+        description: 'Обычные скины для начала игры',
+        price: 0,
+        chances: { common: 95, rare: 5, epic: 0, legendary: 0, mythical: 0, ancient: 0 },
+        value: { avg: 45, roi: 45 },
+        type: 'free',
+        limitation: '1 раз в день'
+    },
+    2: {
+        title: 'Приветственный Кейс',
+        description: 'Подарок для новых игроков',
+        price: 0,
+        chances: { common: 95, rare: 5, epic: 0, legendary: 0, mythical: 0, ancient: 0 },
+        value: { avg: 45, roi: 45 },
+        type: 'free',
+        limitation: 'Только для новичков'
+    },
+    3: {
+        title: 'Ежедневный Бонус',
+        description: 'Награда за ежедневный вход',
+        price: 0,
+        chances: { common: 95, rare: 5, epic: 0, legendary: 0, mythical: 0, ancient: 0 },
+        value: { avg: 45, roi: 45 },
+        type: 'free',
+        limitation: 'За вход 7 дней подряд'
+    },
+
+    // Для новичков
+    4: {
+        title: 'Базовый Кейс',
+        description: 'Отличное начало для новых игроков',
+        price: 50,
+        chances: { common: 80, rare: 18, epic: 2, legendary: 0, mythical: 0, ancient: 0 },
+        value: { avg: 32, roi: 65 },
+        type: 'starter'
+    },
+    5: {
+        title: 'Стартовый Кейс',
+        description: 'Первый шаг к большой коллекции',
+        price: 100,
+        chances: { common: 70, rare: 25, epic: 5, legendary: 0, mythical: 0, ancient: 0 },
+        value: { avg: 70, roi: 70 },
+        type: 'starter'
+    },
+    6: {
+        title: 'Кейс Ученика',
+        description: 'Для тех, кто осваивает азы',
+        price: 200,
+        chances: { common: 60, rare: 30, epic: 9, legendary: 1, mythical: 0, ancient: 0 },
+        value: { avg: 150, roi: 75 },
+        type: 'starter'
+    },
+
+    // Премиум кейсы
+    7: {
+        title: 'Премиум Кейс',
+        description: 'Редкие и эпические скины',
+        price: 500,
+        chances: { common: 40, rare: 45, epic: 12, legendary: 3, mythical: 0, ancient: 0 },
+        value: { avg: 400, roi: 80 },
+        type: 'premium'
+    },
+    8: {
+        title: 'Золотой Кейс',
+        description: 'Исключительные предметы',
+        price: 1000,
+        chances: { common: 30, rare: 40, epic: 20, legendary: 9, mythical: 1, ancient: 0 },
+        value: { avg: 850, roi: 85 },
+        type: 'premium'
+    },
+    9: {
+        title: 'Платиновый Кейс',
+        description: 'Элитные скины высокого качества',
+        price: 2000,
+        chances: { common: 20, rare: 35, epic: 30, legendary: 13, mythical: 2, ancient: 0 },
+        value: { avg: 1800, roi: 90 },
+        type: 'premium'
+    },
+
+    // Легендарные кейсы
+    10: {
+        title: 'Легендарный Кейс',
+        description: 'Шанс на легендарные предметы',
+        price: 5000,
+        chances: { common: 10, rare: 25, epic: 40, legendary: 20, mythical: 4, ancient: 1 },
+        value: { avg: 4750, roi: 95 },
+        type: 'legendary'
+    },
+    11: {
+        title: 'Мифический Кейс',
+        description: 'Редчайшие скины в игре',
+        price: 10000,
+        chances: { common: 5, rare: 15, epic: 35, legendary: 30, mythical: 12, ancient: 3 },
+        value: { avg: 11000, roi: 110 },
+        type: 'legendary'
+    },
+    12: {
+        title: 'Древний Кейс',
+        description: 'Артефакты невероятной силы',
+        price: 25000,
+        chances: { common: 2, rare: 8, epic: 25, legendary: 40, mythical: 20, ancient: 5 },
+        value: { avg: 37500, roi: 150 },
+        type: 'legendary'
+    },
+
+    // Секретные кейсы
+    13: {
+        title: 'Загадочный Кейс',
+        description: 'Содержит случайные сюрпризы',
+        price: 1500,
+        chances: { common: 50, rare: 30, epic: 15, legendary: 4, mythical: 1, ancient: 0 },
+        value: { avg: 1050, roi: 70 },
+        type: 'secret'
+    },
+    14: {
+        title: 'Таинственный Кейс',
+        description: 'Неизвестное содержимое',
+        price: 3000,
+        chances: { common: 40, rare: 25, epic: 20, legendary: 10, mythical: 4, ancient: 1 },
+        value: { avg: 1500, roi: 50 },
+        type: 'secret'
+    },
+    15: {
+        title: 'Запретный Кейс',
+        description: 'Только для смелых игроков',
+        price: 7500,
+        chances: { common: 30, rare: 20, epic: 25, legendary: 15, mythical: 8, ancient: 2 },
+        value: { avg: 2250, roi: 30 },
+        type: 'secret'
+    },
+
+    // VIP кейсы
+    16: {
+        title: 'VIP Золотой',
+        description: 'Элитные скины для избранных',
+        price: 15000,
+        chances: { common: 0, rare: 20, epic: 40, legendary: 30, mythical: 8, ancient: 2 },
+        value: { avg: 16500, roi: 110 },
+        type: 'vip'
+    },
+    17: {
+        title: 'VIP Бриллиантовый',
+        description: 'Невероятно редкие скины',
+        price: 50000,
+        chances: { common: 0, rare: 10, epic: 30, legendary: 40, mythical: 15, ancient: 5 },
+        value: { avg: 60000, roi: 120 },
+        type: 'vip'
+    },
+    18: {
+        title: 'VIP Платиновый',
+        description: 'Абсолютная эксклюзивность',
+        price: 100000,
+        chances: { common: 0, rare: 5, epic: 20, legendary: 45, mythical: 20, ancient: 10 },
+        value: { avg: 130000, roi: 130 },
+        type: 'vip'
+    },
+
+    // Хеллоуинские кейсы
+    19: {
+        title: 'Тыквенный Кейс',
+        description: 'Жуткие скины на Хеллоуин',
+        price: 750,
+        chances: { common: 35, rare: 40, epic: 20, legendary: 4, mythical: 1, ancient: 0 },
+        value: { avg: 600, roi: 80 },
+        type: 'halloween'
+    },
+    20: {
+        title: 'Призрачный Кейс',
+        description: 'Мистические предметы',
+        price: 1500,
+        chances: { common: 25, rare: 35, epic: 30, legendary: 8, mythical: 2, ancient: 0 },
+        value: { avg: 1275, roi: 85 },
+        type: 'halloween'
+    },
+    21: {
+        title: 'Вампирский Кейс',
+        description: 'Кроваво-красные скины',
+        price: 3000,
+        chances: { common: 15, rare: 30, epic: 35, legendary: 15, mythical: 4, ancient: 1 },
+        value: { avg: 2700, roi: 90 },
+        type: 'halloween'
+    },
+
+    // Зимние кейсы
+    22: {
+        title: 'Снежный Кейс',
+        description: 'Морозные скины',
+        price: 1000,
+        chances: { common: 30, rare: 45, epic: 20, legendary: 4, mythical: 1, ancient: 0 },
+        value: { avg: 800, roi: 80 },
+        type: 'winter'
+    },
+    23: {
+        title: 'Ледяной Кейс',
+        description: 'Холодные синие скины',
+        price: 2500,
+        chances: { common: 20, rare: 40, epic: 30, legendary: 8, mythical: 2, ancient: 0 },
+        value: { avg: 2125, roi: 85 },
+        type: 'winter'
+    },
+    24: {
+        title: 'Новогодний Кейс',
+        description: 'Праздничные скины',
+        price: 5000,
+        chances: { common: 10, rare: 35, epic: 35, legendary: 15, mythical: 4, ancient: 1 },
+        value: { avg: 4500, roi: 90 },
+        type: 'winter'
+    }
+};
+
+// Загружаем данные кейса при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    const caseId = {{ case_id }};
+    const caseInfo = caseData[caseId];
+
+    if (!caseInfo) {
+        showNotification('Кейс не найден!', 'error');
+        return;
+    }
+
+    // Заполняем информацию о кейсе
+    document.getElementById('caseTitle').textContent = caseInfo.title;
+    document.getElementById('caseDescription').textContent = caseInfo.description;
+
+    // Цена кейса
+    const priceElement = document.getElementById('casePrice');
+    if (caseInfo.price === 0) {
+        priceElement.textContent = 'БЕСПЛАТНО';
+        priceElement.className = 'uc-price free-price';
+        // Показываем информацию о бесплатном кейсе
+        document.getElementById('freeCaseInfo').style.display = 'block';
+        checkFreeCaseAvailability(caseId);
+    } else {
+        priceElement.textContent = caseInfo.price.toLocaleString() + ' UC';
+        priceElement.className = 'uc-price';
+    }
+
+    // Заполняем шансы
+    displayChances(caseInfo.chances);
+
+    // Заполняем информацию о ценности
+    displayValueInfo(caseInfo.value, caseInfo.price);
+
+    // Загружаем скины для рулетки
+    loadCaseSkins(caseInfo.type);
+});
+
+// Функции для отображения информации
+function displayChances(chances) {
+    const chancesList = document.getElementById('chancesList');
+    chancesList.innerHTML = '';
+
+    const rarityNames = {
+        'common': 'Обычный',
+        'rare': 'Редкий',
+        'epic': 'Эпический',
+        'legendary': 'Легендарный',
+        'mythical': 'Мифический',
+        'ancient': 'Древний'
+    };
+
+    const rarityColors = {
+        'common': 'common',
+        'rare': 'rare',
+        'epic': 'epic',
+        'legendary': 'legendary',
+        'mythical': 'mythical',
+        'ancient': 'ancient'
+    };
+
+    for (const [rarity, percent] of Object.entries(chances)) {
+        if (percent > 0) {
+            const chanceItem = document.createElement('div');
+            chanceItem.className = 'chance-item';
+            chanceItem.innerHTML = `
+                <span class="rarity ${rarityColors[rarity]}">${rarityNames[rarity]}</span>
+                <span class="chance-percent">${percent}%</span>
+            `;
+            chancesList.appendChild(chanceItem);
+        }
+    }
+}
+
+function displayValueInfo(valueInfo, price) {
+    const valueElement = document.getElementById('valueInfo');
+    const roiClass = valueInfo.roi >= 100 ? 'text-success' :
+                    valueInfo.roi >= 70 ? 'text-warning' : 'text-danger';
+
+    valueElement.innerHTML = `
+        <p>Средний выигрыш: <strong>${valueInfo.avg.toLocaleString()} UC</strong></p>
+        <p>Окупаемость: <strong class="${roiClass}">${valueInfo.roi}%</strong></p>
+    `;
+}
+
+// Проверка доступности бесплатного кейса
+function checkFreeCaseAvailability(caseId) {
+    fetch(`/api/check_free_case/${caseId}`)
+        .then(response => response.json())
+        .then(data => {
+            const statusElement = document.getElementById('availabilityStatus');
+            const hintElement = document.getElementById('freeCaseHint');
+            const openBtn = document.getElementById('openCaseBtn');
+
+            if (data.available) {
+                statusElement.innerHTML = '<span class="text-success">✅ Доступен для открытия</span>';
+                hintElement.textContent = data.hint || 'Можно открыть прямо сейчас!';
+                openBtn.disabled = false;
+            } else {
+                statusElement.innerHTML = '<span class="text-danger">❌ Уже использован сегодня</span>';
+                hintElement.textContent = data.hint || 'Возвращайтесь завтра!';
+                openBtn.disabled = true;
+            }
+        })
+        .catch(error => {
+            console.error('Error checking free case:', error);
+        });
+}
+
+// Функции рулетки (продолжение)
+function loadCaseSkins(caseType) {
+    // Загружаем скины для данного типа кейса
+    // В реальном приложении здесь был бы fetch запрос
+    const skins = getSkinsForCaseType(caseType);
+    createRouletteWithTargetSkin(null, skins);
+}
+
+// Вспомогательные функции для редкостей
+function getSkinRarity(skinPrice) {
+    if (skinPrice <= 50) return 'common';
+    if (skinPrice <= 300) return 'rare';
+    if (skinPrice <= 1500) return 'epic';
+    if (skinPrice <= 5000) return 'legendary';
+    if (skinPrice <= 50000) return 'mythical';
+    return 'ancient';
+}
+
+function getRarityName(rarity) {
+    const names = {
+        'common': 'Обычный',
+        'rare': 'Редкий',
+        'epic': 'Эпический',
+        'legendary': 'Легендарный',
+        'mythical': 'Мифический',
+        'ancient': 'Древний'
+    };
+    return names[rarity] || 'Обычный';
+}
+
+function getRarityColor(rarity) {
+    const colors = {
+        'common': '#6c757d',
+        'rare': '#007bff',
+        'epic': '#8a2be2',
+        'legendary': '#ff6b6b',
+        'mythical': '#ff00ff',
+        'ancient': '#00ffff'
+    };
+    return colors[rarity] || '#6c757d';
+}
+
+// Глобальные переменные
+let currentSkins = [];
+const rouletteWheel = document.getElementById('rouletteWheel');
+let isSpinning = false;
+let currentWonSkin = null;
+
+function createRouletteWithTargetSkin(targetSkin = null, skins = null) {
+    rouletteWheel.innerHTML = '';
+
+    if (skins && skins.length > 0) {
+        currentSkins = skins;
+    }
+
+    console.log('Creating roulette with', currentSkins.length, 'skins');
+
+    if (!currentSkins || currentSkins.length === 0) {
+        console.error('No skins available for roulette');
+        // Создаем fallback скины
+        currentSkins = getDemoSkins();
+    }
+
+    // Создаем достаточно элементов для плавной прокрутки
+    const totalItems = 50;
+
+    for (let i = 0; i < totalItems; i++) {
+        let skin;
+
+        if (targetSkin && i === 25) { // Центральная позиция для выигранного скина
+            skin = targetSkin;
+        } else {
+            skin = getRandomSkin(targetSkin);
+        }
+
+        // Проверяем что скин валидный
+        if (!skin || !skin.id) {
+            console.warn('Invalid skin at position', i, skin);
+            skin = getDemoSkins()[0]; // Fallback скин
+        }
+
+        createRouletteItem(skin);
+    }
+}
+
+// Улучшаем функцию получения случайного скина
+function getRandomSkin(excludeSkin = null) {
+    if (!currentSkins || currentSkins.length === 0) {
+        return getDemoSkins()[0];
+    }
+
+    // Если скинов мало, просто берем случайный
+    if (currentSkins.length <= 5) {
+        return currentSkins[Math.floor(Math.random() * currentSkins.length)];
+    }
+
+    let randomSkin;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    do {
+        randomSkin = currentSkins[Math.floor(Math.random() * currentSkins.length)];
+        attempts++;
+
+        // Если слишком много попыток, берем любой скин
+        if (attempts >= maxAttempts) {
+            break;
+        }
+
+    } while (excludeSkin && randomSkin.id === excludeSkin.id);
+
+    return randomSkin;
+}
+
+function createRouletteItem(skin) {
+    const skinElement = document.createElement('div');
+    skinElement.className = 'roulette-item';
+    const rarity = getSkinRarity(skin.price);
+    skinElement.innerHTML = `
+        <img src="${skin.image}" alt="${skin.name}">
+        <div class="skin-rarity ${rarity}">${getRarityName(rarity)}</div>
+        <div class="skin-name">${skin.name}</div>
+        <div class="skin-price-small">${skin.price.toLocaleString()} UC</div>
+    `;
+    rouletteWheel.appendChild(skinElement);
+}
+
+// Инициализируем рулетку
+createRouletteWithTargetSkin();
+
+// Логика открытия кейса
+document.getElementById('openCaseBtn').addEventListener('click', function() {
+    if (isSpinning) return;
+
+    const btn = this;
+    const resultDiv = document.getElementById('result');
+    const caseId = {{ case_id }};
+    const caseInfo = caseData[caseId];
+
+    isSpinning = true;
+    btn.disabled = true;
+    btn.textContent = 'Открывается...';
+    resultDiv.innerHTML = '';
+
+    // Звук открытия кейса
+    playSound('caseOpenSound');
+
+    // Для бесплатных кейсов проверяем доступность
+    if (caseInfo.price === 0) {
+        if (btn.disabled) {
+            showNotification('Бесплатный кейс уже использован сегодня!', 'error');
+            isSpinning = false;
+            btn.disabled = false;
+            btn.textContent = 'Открыть кейс';
+            return;
+        }
+    }
+
+    // Сбрасываем позицию рулетки
+    rouletteWheel.style.transition = 'none';
+    rouletteWheel.style.transform = 'translateX(0)';
+
+    // Запрос к серверу для получения выигрыша
+    fetch(`/api/open_case/${caseId}`)
+        .then(response => response.json())
+        .then(wonSkin => {
+            if (wonSkin.error) {
+                showNotification(wonSkin.error, 'error');
+                isSpinning = false;
+                btn.disabled = false;
+                btn.textContent = 'Открыть кейс';
+                return;
+            }
+
+            currentWonSkin = wonSkin;
+
+            // Обновляем баланс в шапке после списания (если не бесплатный)
+            if (caseInfo.price > 0) {
+                updateHeaderBalance();
+            }
+
+            // ПЕРЕСОЗДАЕМ РУЛЕТКУ С ВЫИГРАННЫМ СКИНОМ В ЦЕЛЕВОЙ ПОЗИЦИИ
+            createRouletteWithTargetSkin(wonSkin);
+
+            // Даем время на перерисовку DOM
+            setTimeout(() => {
+                // Звук прокрутки рулетки
+                playSound('caseRollSound');
+
+                // Вычисляем позицию для остановки (центрируем целевой скин)
+                const skinWidth = 170;
+                const targetPosition = 25;
+                const stopPosition = -(targetPosition * skinWidth - 2 * skinWidth);
+                const extraMovement = 5000;
+                const finalPosition = stopPosition - extraMovement;
+
+                // Запускаем анимацию прокрутки
+                rouletteWheel.style.transition = 'transform 5s cubic-bezier(0.1, 0.1, 0.1, 1)';
+                rouletteWheel.style.transform = `translateX(${finalPosition}px)`;
+
+                // Функция для проверки и добавления элементов при необходимости
+                const checkAndAddItems = () => {
+                    const currentTransform = rouletteWheel.style.transform;
+                    const currentX = parseInt(currentTransform.match(/translateX\(([-\d]+)px/)[1]) || 0;
+                    const totalWidth = rouletteWheel.scrollWidth;
+                    const visibleWidth = document.querySelector('.roulette-wrapper').clientWidth;
+
+                    if (Math.abs(currentX) > totalWidth - visibleWidth * 2) {
+                        addMoreItems();
+                    }
+                };
+
+                function addMoreItems() {
+                    const additionalItems = 20;
+                    for (let i = 0; i < additionalItems; i++) {
+                        const skin = getRandomSkin(currentWonSkin);
+                        createRouletteItem(skin);
+                    }
+                }
+
+                const checkInterval = setInterval(checkAndAddItems, 100);
+
+                // После завершения анимации
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+
+                    // Показываем результат с кнопками
+                    showWinResult(wonSkin, caseInfo.price);
+
+                    // Плавно возвращаем рулетку в начало
+                    setTimeout(() => {
+                        rouletteWheel.style.transition = 'transform 0.5s ease';
+                        rouletteWheel.style.transform = 'translateX(0)';
+
+                        setTimeout(() => {
+                            // Сбрасываем анимацию и пересоздаем рулетку
+                            rouletteWheel.style.transition = 'none';
+                            createRouletteWithTargetSkin();
+                            isSpinning = false;
+                            btn.disabled = false;
+                            btn.textContent = 'Открыть кейс';
+
+                            // Обновляем статус бесплатного кейса
+                            if (caseInfo.price === 0) {
+                                checkFreeCaseAvailability(caseId);
+                            }
+                        }, 500);
+                    }, 1000);
+
+                }, 5050);
+
+            }, 100);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Ошибка при открытии кейса', 'error');
+            isSpinning = false;
+            btn.disabled = false;
+            btn.textContent = 'Открыть кейс';
+        });
+});
+
+function showWinResult(wonSkin, casePrice) {
+    const resultDiv = document.getElementById('result');
+    const rarity = getSkinRarity(wonSkin.price);
+    const rarityColor = getRarityColor(rarity);
+
+    // Звук в зависимости от прибыли
+    const profit = wonSkin.price - casePrice;
+
+    if (profit >= 0) {
+        playSound('caseWinSound');
+    } else {
+        playSound('caseLoseSound');
+    }
+
+    resultDiv.innerHTML = `
+        <div class="won-skin" style="border-color: ${rarityColor}">
+            <h4>🎉 Вы выиграли!</h4>
+            <div class="skin-card">
+                <img src="${wonSkin.image}" alt="${wonSkin.name}">
+                <div class="skin-rarity ${rarity}">${getRarityName(rarity)}</div>
+                <h5>${wonSkin.name}</h5>
+                <p class="skin-value">${wonSkin.price.toLocaleString()} UC</p>
+                <div class="profit-info">
+                    <span class="profit-${profit >= 0 ? 'positive' : 'negative'}">
+                        ${profit >= 0 ? '✅ +' : '❌ '}${profit.toLocaleString()} UC
+                    </span>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-save" onclick="saveSkin(${wonSkin.id})">💾 Сохранить в инвентарь</button>
+                <button class="btn btn-sell" onclick="sellCurrentSkin()">💰 Продать за ${wonSkin.price.toLocaleString()} UC</button>
+            </div>
+        </div>
+    `;
+}
+
+// Функции для кнопок
+function saveSkin(skinId) {
+    playSound('clickSound');
+
+    fetch('/api/save_skin', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({skin_id: skinId})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('✅ Скин сохранен в инвентарь!');
+            document.querySelector('.action-buttons').innerHTML = '<p class="text-success">✅ Скин сохранен в инвентарь</p>';
+        } else {
+            showNotification('Ошибка при сохранении скина', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка при сохранении скина', 'error');
+    });
+}
+
+function sellCurrentSkin() {
+    if (!currentWonSkin) return;
+
+    playSound('clickSound');
+
+    fetch('/api/sell_skin', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({skin_id: currentWonSkin.id})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`💰 Скин продан за ${data.price.toLocaleString()} UC!`);
+            document.querySelector('.action-buttons').innerHTML = '<p class="text-success">💰 Скин продан</p>';
+            updateHeaderBalance();
+        } else {
+            showNotification('Ошибка при продаже скина', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка при продаже скина', 'error');
+    });
+}
+
+function loadCaseSkins(caseType) {
+    console.log('Loading skins for case type:', caseType);
+
+    fetch(`/api/get_case_skins/${caseType}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Loaded skins:', data.skins ? data.skins.length : 0);
+
+            if (data.skins && data.skins.length > 0) {
+                currentSkins = data.skins;
+                createRouletteWithTargetSkin(null, currentSkins);
+            } else {
+                console.error('No skins received from server');
+                currentSkins = getDemoSkins();
+                createRouletteWithTargetSkin(null, currentSkins);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading case skins:', error);
+            currentSkins = getDemoSkins();
+            createRouletteWithTargetSkin(null, currentSkins);
+        });
+}
+
+// Улучшаем демо-скины
+function getDemoSkins() {
+    return [
+        {'id': 1, 'name': 'M416 - Серый', 'image': 'https://via.placeholder.com/100/6c757d/ffffff?text=M416', 'price': 20},
+        {'id': 201, 'name': 'M416 - Голубой Лед', 'image': 'https://via.placeholder.com/100/007bff/ffffff?text=M416', 'price': 150},
+        {'id': 401, 'name': 'M416 - Драконий Огонь', 'image': 'https://via.placeholder.com/100/8a2be2/ffffff?text=M416', 'price': 800},
+        {'id': 2, 'name': 'AKM - Стандарт', 'image': 'https://via.placeholder.com/100/6c757d/ffffff?text=AKM', 'price': 25},
+        {'id': 202, 'name': 'AKM - Кровавый', 'image': 'https://via.placeholder.com/100/007bff/ffffff?text=AKM', 'price': 180},
+        {'id': 402, 'name': 'AKM - Вампир', 'image': 'https://via.placeholder.com/100/8a2be2/ffffff?text=AKM', 'price': 900}
+    ];
+}
+</script>
+
+<style>
+/* Стили остаются такими же как в оригинальном case_detail.html */
+.case-detail-container {
+    padding: 20px;
+}
+
+.case-info-sidebar {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 20px;
+    position: sticky;
+    top: 20px;
+}
+
+.case-image {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #8a2be2;
+}
+
+.case-price-large .uc-price {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 28px;
+    display: block;
+    text-align: center;
+    margin: 15px 0;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.case-price-large .free-price {
+    color: #28a745;
+}
+
+/* Стили для информации о бесплатном кейсе */
+.free-case-info {
+    background: rgba(40, 167, 69, 0.1);
+    border: 1px solid #28a745;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.availability-status {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+/* Остальные стили остаются без изменений */
+/* ... */
+</style>
+{% endblock %}

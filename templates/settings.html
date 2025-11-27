@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="settings-container">
+    <h1 class="text-center mb-4">⚙️ Настройки профиля</h1>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="settings-card">
+                <!-- Смена ника -->
+                <div class="setting-section mb-4">
+                    <h4>👤 Смена никнейма</h4>
+                    <div class="setting-content">
+                        <p class="text-muted">Текущий ник: <strong>{{ session.get('username', 'User') }}</strong></p>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <input type="text" class="form-control" id="newUsername" 
+                                       placeholder="Новый никнейм" maxlength="20">
+                                <div class="form-text">Максимум 20 символов</div>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-primary w-100" onclick="changeUsername()">
+                                    💾 Сохранить
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Смена пароля -->
+                <div class="setting-section mb-4">
+                    <h4>🔒 Смена пароля</h4>
+                    <div class="setting-content">
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <input type="password" class="form-control" id="currentPassword" 
+                                       placeholder="Текущий пароль">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <input type="password" class="form-control" id="newPassword" 
+                                       placeholder="Новый пароль">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="password" class="form-control" id="confirmPassword" 
+                                       placeholder="Повторите пароль">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <button class="btn btn-warning w-100" onclick="changePassword()">
+                                    🔐 Сменить пароль
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Выбор аватарки -->
+                <div class="setting-section mb-4">
+                    <h4>🖼️ Выбор аватарки</h4>
+                    <div class="setting-content">
+                        <div class="current-avatar mb-3">
+                            <img src="{{ url_for('static', filename='images/avatars/' + current_avatar) }}"
+                                 alt="Аватар" class="avatar-preview" id="avatarPreview">
+                            <span class="avatar-text">Текущая аватарка</span>
+                        </div>
+                        
+                        <div class="avatar-selection">
+                            <h6>Выберите новую аватарку:</h6>
+                            <div class="avatar-grid">
+                                {% for i in range(1, 9) %}
+                                <div class="avatar-option {% if current_avatar == 'avatar' ~ i ~ '.png' %}selected{% endif %}" 
+                                     onclick="selectAvatar('avatar{{ i }}.png')">
+                                    <img src="{{ url_for('static', filename='images/avatars/avatar' ~ i ~ '.png') }}" 
+                                         alt="Аватар {{ i }}">
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button class="btn btn-success mt-3" onclick="saveAvatar()" id="saveAvatarBtn" disabled>
+                                💾 Сохранить аватарку
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Настройки звука -->
+                <div class="setting-section mb-4">
+                    <h4>🔊 Настройки звука</h4>
+                    <div class="setting-content">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="soundToggle" checked>
+                            <label class="form-check-label" for="soundToggle">
+                                Включить звуки в играх
+                            </label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="musicToggle">
+                            <label class="form-check-label" for="musicToggle">
+                                Фоновая музыка
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Статистика -->
+                <div class="setting-section">
+                    <h4>📊 Статистика аккаунта</h4>
+                    <div class="setting-content">
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <span>Дата регистрации:</span>
+                                <span>{{ registration_date }}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>Всего сыграно игр:</span>
+                                <span>{{ total_games }}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>Открыто кейсов:</span>
+                                <span>{{ cases_opened }}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>Всего скинов:</span>
+                                <span>{{ total_skins }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedAvatar = null;
+
+function changeUsername() {
+    const newUsername = document.getElementById('newUsername').value.trim();
+    
+    if (!newUsername) {
+        showNotification('Введите новый никнейм!', 'error');
+        return;
+    }
+    
+    if (newUsername.length < 3 || newUsername.length > 20) {
+        showNotification('Никнейм должен быть от 3 до 20 символов!', 'error');
+        return;
+    }
+
+    fetch('/api/change_username', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({new_username: newUsername})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('✅ Никнейм успешно изменен!');
+            document.getElementById('newUsername').value = '';
+            // Обновляем имя в сессии
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.error || 'Ошибка при смене ника', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка при смене ника', 'error');
+    });
+}
+
+function changePassword() {
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        showNotification('Заполните все поля!', 'error');
+        return;
+    }
+
+    if (newPassword.length < 4) {
+        showNotification('Пароль должен быть не менее 4 символов!', 'error');
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        showNotification('Пароли не совпадают!', 'error');
+        return;
+    }
+
+    fetch('/api/change_password', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            current_password: currentPassword,
+            new_password: newPassword
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('✅ Пароль успешно изменен!');
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+        } else {
+            showNotification(data.error || 'Ошибка при смене пароля', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка при смене пароля', 'error');
+    });
+}
+
+function selectAvatar(avatarName) {
+    selectedAvatar = avatarName;
+    document.getElementById('avatarPreview').src = `/static/images/avatars/${avatarName}`;
+    document.getElementById('saveAvatarBtn').disabled = false;
+    
+    // Убираем выделение у всех и добавляем выбранному
+    document.querySelectorAll('.avatar-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    event.target.closest('.avatar-option').classList.add('selected');
+}
+
+function saveAvatar() {
+    if (!selectedAvatar) return;
+
+    fetch('/api/change_avatar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({avatar: selectedAvatar})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('✅ Аватарка успешно изменена!');
+            document.getElementById('saveAvatarBtn').disabled = true;
+        } else {
+            showNotification('Ошибка при смене аватарки', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка при смене аватарки', 'error');
+    });
+}
+
+// Загрузка настроек звука при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    const soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
+    document.getElementById('soundToggle').checked = soundEnabled;
+    
+    // Слушатели изменений настроек звука
+    document.getElementById('soundToggle').addEventListener('change', function() {
+        localStorage.setItem('soundEnabled', this.checked);
+        showNotification(this.checked ? '🔊 Звуки включены' : '🔇 Звуки выключены');
+    });
+    
+    document.getElementById('musicToggle').addEventListener('change', function() {
+        showNotification(this.checked ? '🎵 Музыка включена' : '🎵 Музыка выключена');
+    });
+});
+</script>
+
+<style>
+.settings-container {
+    padding: 20px;
+}
+
+.settings-card {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 30px;
+}
+
+.setting-section {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #8a2be2;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.setting-section h4 {
+    color: #ffd700;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.setting-content {
+    color: #b19cd9;
+}
+
+/* Аватарки */
+.current-avatar {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.avatar-preview {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid #8a2be2;
+    object-fit: cover;
+}
+
+.avatar-text {
+    color: white;
+    font-weight: 500;
+}
+
+.avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.avatar-option {
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 5px;
+    transition: all 0.3s ease;
+}
+
+.avatar-option:hover {
+    border-color: #8a2be2;
+    transform: scale(1.05);
+}
+
+.avatar-option.selected {
+    border-color: #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.avatar-option img {
+    width: 100%;
+    border-radius: 6px;
+}
+
+/* Статистика */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+}
+
+.stat-item span:first-child {
+    color: #b19cd9;
+}
+
+.stat-item span:last-child {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+/* Переключатели */
+.form-check-input:checked {
+    background-color: #8a2be2;
+    border-color: #8a2be2;
+}
+
+.form-check-label {
+    color: white;
+    cursor: pointer;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .avatar-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,544 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="plane-game-container">
+    <h1 class="text-center mb-4">✈️ Игра "Самолет"</h1>
+    
+    <div class="row">
+        <!-- Левая часть - информация и управление -->
+        <div class="col-md-4">
+            <div class="game-info-sidebar">
+                <div class="game-rules mb-4">
+                    <h4>📋 Правила игры:</h4>
+                    <p>Самолет взлетает и постепенно увеличивает множитель выигрыша.</p>
+                    <p>Задача - успеть вывести деньги до того, как самолет взорвется!</p>
+                    <p>Чем дольше ждешь - тем больше выигрыш, но выше риск проиграть.</p>
+                    <p class="text-warning">⚠️ Взрыв происходит случайно - никто не знает когда!</p>
+                </div>
+
+                <div class="bet-controls mb-4">
+                    <h5>💵 Ставка UC</h5>
+                    <div class="bet-amount-control">
+                        <button class="btn btn-bet-control" onclick="changeBet(-100)">-100</button>
+                        <input type="number" id="betAmount" class="bet-input" value="100" min="10" max="10000000">
+                        <button class="btn btn-bet-control" onclick="changeBet(100)">+100</button>
+                    </div>
+                    <div class="bet-presets">
+                        <button class="btn btn-bet-preset" onclick="setBet(100)">100 UC</button>
+                        <button class="btn btn-bet-preset" onclick="setBet(1000)">1,000 UC</button>
+                        <button class="btn btn-bet-preset" onclick="setBet(10000)">10,000 UC</button>
+                        <button class="btn btn-bet-preset" onclick="setBet(100000)">100,000 UC</button>
+                        <button class="btn btn-bet-preset" onclick="setBet(1000000)">1,000,000 UC</button>
+                        <button class="btn btn-bet-preset" onclick="setBet(10000000)">10,000,000 UC</button>
+                    </div>
+                </div>
+
+                <div class="game-controls">
+                    <button class="btn btn-start-game" id="startGameBtn" onclick="startGame()">🛫 Запустить самолет</button>
+                    <button class="btn btn-cashout" id="cashoutBtn" onclick="cashout()" disabled>💰 Вывести</button>
+                </div>
+
+                <div class="game-stats mt-4">
+                    <div class="stat-item">
+                        <span>Текущий множитель:</span>
+                        <span id="currentMultiplier">1.00x</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Потенциальный выигрыш:</span>
+                        <span id="potentialWin">0 UC</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Баланс:</span>
+                        <span id="gameBalance">0 UC</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая часть - игровое поле -->
+        <div class="col-md-8">
+            <div class="game-field">
+                <div class="plane-track">
+                    <div class="explosion-zone">
+                        <div class="explosion-text">💥 ВЗРЫВ</div>
+                    </div>
+                    <div class="plane-container" id="planeContainer">
+                        <div class="plane" id="plane">✈️</div>
+                        <div class="multiplier-display" id="planeMultiplier">1.00x</div>
+                    </div>
+                    <div class="takeoff-zone">
+                        <div class="takeoff-text">🛫 ВЗЛЕТ</div>
+                    </div>
+                </div>
+
+                <div class="multiplier-history">
+                    <h5>📊 История множителей:</h5>
+                    <div class="history-list" id="multiplierHistory">
+                        <!-- История будет добавляться через JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Переменные игры
+let gameActive = false;
+let currentMultiplier = 1.00;
+let currentBet = 100;
+let gameInterval = null;
+
+// Вероятность взрыва на каждом шаге (увеличивается с множителем)
+function getExplosionChance() {
+    // Вероятность взрыва растет экспоненциально с множителем
+    // На 1x: 0.1%, на 2x: 1%, на 5x: 10%, на 10x: 30%
+    const baseChance = 0.001; // 0.1% базовая вероятность
+    const growthFactor = 0.3; // Коэффициент роста
+
+    return baseChance * Math.exp(growthFactor * (currentMultiplier - 1));
+}
+
+// Загружаем баланс при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    updateBalance();
+    updatePotentialWin();
+});
+
+// Функции управления ставкой
+function changeBet(amount) {
+    currentBet = parseInt(document.getElementById('betAmount').value) + amount;
+    if (currentBet < 10) currentBet = 10;
+    if (currentBet > 10000000) currentBet = 10000000; // Максимум 10M UC
+    document.getElementById('betAmount').value = currentBet;
+    updatePotentialWin();
+}
+
+function setBet(amount) {
+    currentBet = amount;
+    if (currentBet > 10000000) currentBet = 10000000; // Максимум 10M UC
+    document.getElementById('betAmount').value = currentBet;
+    updatePotentialWin();
+}
+
+function updateBetDisplay() {
+    document.getElementById('betAmount').value = currentBet;
+    updatePotentialWin();
+}
+
+function updatePotentialWin() {
+    const potentialWin = Math.floor(currentBet * currentMultiplier);
+    document.getElementById('potentialWin').textContent = potentialWin.toLocaleString() + ' UC';
+}
+
+// Функции игры
+function startGame() {
+    // Звук запуска самолета
+    playSound('planeStartSound');
+
+    if (gameActive) return;
+
+    // Проверяем баланс
+    updateBalance().then(userBalance => {
+        if (userBalance < currentBet) {
+            showNotification('Недостаточно UC для ставки!', 'error');
+            return;
+        }
+
+        // Списываем ставку с баланса
+        fetch('/api/plane_bet', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({amount: currentBet})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Сбрасываем игру
+                resetGame();
+                gameActive = true;
+
+                // Обновляем UI
+                document.getElementById('startGameBtn').disabled = true;
+                document.getElementById('cashoutBtn').disabled = false;
+
+                // Запускаем анимацию
+                startPlaneAnimation();
+
+                // Обновляем баланс
+                updateBalance();
+            } else {
+                showNotification('Ошибка при списании ставки!', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Ошибка при списании ставки!', 'error');
+        });
+    });
+}
+
+function cashout() {
+
+    playSound('planeCashoutSound');
+
+    if (!gameActive) return;
+
+    // Вычисляем выигрыш
+    const winAmount = Math.floor(currentBet * currentMultiplier);
+
+    // Зачисляем выигрыш на баланс
+    fetch('/api/plane_win', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({amount: winAmount})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            endGame(true);
+            showNotification(`🎉 Вы успели вывести ${winAmount.toLocaleString()} UC!`);
+            addToHistory(currentMultiplier, true);
+            updateBalance();
+        } else {
+            showNotification('Ошибка при зачислении выигрыша!', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка при зачислении выигрыша!', 'error');
+    });
+}
+
+function endGame(win = false) {
+
+    playSound('planeCrashSound');
+
+    gameActive = false;
+    clearInterval(gameInterval);
+
+    document.getElementById('startGameBtn').disabled = false;
+    document.getElementById('cashoutBtn').disabled = true;
+
+    if (!win) {
+        showNotification('💥 Самолет взорвался! Вы проиграли ставку.', 'error');
+        addToHistory(currentMultiplier, false);
+    }
+}
+
+function resetGame() {
+    currentMultiplier = 1.00;
+    document.getElementById('currentMultiplier').textContent = '1.00x';
+    document.getElementById('planeMultiplier').textContent = '1.00x';
+    document.getElementById('planeContainer').style.left = '0%';
+    document.getElementById('planeContainer').innerHTML = `
+        <div class="plane">✈️</div>
+        <div class="multiplier-display" id="planeMultiplier">1.00x</div>
+    `;
+    updatePotentialWin();
+}
+
+function startPlaneAnimation() {
+    const planeContainer = document.getElementById('planeContainer');
+    let position = 0;
+
+    gameInterval = setInterval(() => {
+        if (!gameActive) return;
+
+        // Увеличиваем множитель
+        currentMultiplier += 0.01;
+
+        // Проверяем случайный взрыв
+        const explosionChance = getExplosionChance();
+        if (Math.random() < explosionChance) {
+            // Взрыв!
+            planeContainer.innerHTML = '<div class="explosion">💥</div>';
+            endGame(false);
+            return;
+        }
+
+        // Обновляем позицию самолета (нелинейно для большей непредсказуемости)
+        const progress = Math.min(1, (currentMultiplier - 1) / 10); // Макс 10x
+        position = Math.pow(progress, 0.7) * 85; // Нелинейное движение
+
+        planeContainer.style.left = position + '%';
+
+        // Обновляем отображение множителя
+        const multiplierText = currentMultiplier.toFixed(2) + 'x';
+        document.getElementById('currentMultiplier').textContent = multiplierText;
+        document.getElementById('planeMultiplier').textContent = multiplierText;
+        updatePotentialWin();
+
+    }, 100); // Обновление каждые 100ms
+}
+
+// Вспомогательные функции
+function updateBalance() {
+    return fetch('/api/get_user_info')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('gameBalance').textContent = data.balance.toLocaleString() + ' UC';
+            return data.balance;
+        });
+}
+
+function addToHistory(multiplier, won) {
+    const historyList = document.getElementById('multiplierHistory');
+    const historyItem = document.createElement('div');
+    historyItem.className = 'history-item ' + (won ? 'history-won' : 'history-lost');
+    historyItem.innerHTML = won ?
+        `✅ ${multiplier.toFixed(2)}x` :
+        `💥 ${multiplier.toFixed(2)}x`;
+
+    historyList.insertBefore(historyItem, historyList.firstChild);
+
+    // Ограничиваем историю 10 записями
+    if (historyList.children.length > 10) {
+        historyList.removeChild(historyList.lastChild);
+    }
+}
+
+// Обработчики событий
+document.getElementById('betAmount').addEventListener('change', function() {
+    currentBet = parseInt(this.value) || 100;
+    if (currentBet < 10) currentBet = 10;
+    if (currentBet > 10000000) currentBet = 10000000; // Максимум 10M UC
+    this.value = currentBet;
+    updatePotentialWin();
+});
+</script>
+
+<style>
+.plane-game-container {
+    padding: 20px;
+}
+
+.game-info-sidebar {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 20px;
+    position: sticky;
+    top: 20px;
+}
+
+.game-rules p {
+    color: #b19cd9;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+    font-weight: bold;
+}
+
+.bet-controls {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.bet-amount-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.bet-input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #8a2be2;
+    border-radius: 5px;
+    color: white;
+    padding: 8px;
+    text-align: center;
+    width: 100px;
+}
+
+.btn-bet-control {
+    background: rgba(138, 43, 226, 0.5);
+    border: 1px solid #8a2be2;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.bet-presets {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.btn-bet-preset {
+    background: rgba(138, 43, 226, 0.3);
+    border: 1px solid #8a2be2;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    flex: 1;
+}
+
+.game-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-start-game {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border: none;
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.btn-cashout {
+    background: linear-gradient(45deg, #ffc107, #fd7e14);
+    border: none;
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.btn-start-game:disabled, .btn-cashout:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.game-stats {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: white;
+}
+
+.stat-item span:last-child {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+/* Игровое поле */
+.game-field {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 20px;
+    height: 500px;
+}
+
+.plane-track {
+    height: 300px;
+    background: linear-gradient(90deg, #1a1a1a, #2d1b69, #1a1a1a);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    position: relative;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.explosion-zone {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 15%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(220, 53, 69, 0.3));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.takeoff-zone {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 15%;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(40, 167, 69, 0.3), transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.explosion-text, .takeoff-text {
+    color: white;
+    font-weight: bold;
+    transform: rotate(90deg);
+}
+
+.plane-container {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+    transform: translateY(-50%);
+    transition: left 0.1s linear;
+}
+
+.plane {
+    font-size: 40px;
+    text-align: center;
+}
+
+.multiplier-display {
+    background: rgba(0, 0, 0, 0.7);
+    color: #ffd700;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 5px;
+    border: 1px solid #ffd700;
+}
+
+.explosion {
+    font-size: 50px;
+    animation: explode 0.5s ease;
+}
+
+@keyframes explode {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.5); }
+    100% { transform: scale(1); }
+}
+
+.multiplier-history {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.history-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.history-item {
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.history-won {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    color: white;
+}
+
+.history-lost {
+    background: linear-gradient(45deg, #dc3545, #fd7e14);
+    color: white;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,643 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="withdraw-container">
+    <h1 class="text-center mb-4">💎 Вывод скинов</h1>
+
+    <div class="row">
+        <!-- Левая часть - выбор скинов для вывода -->
+        <div class="col-md-6">
+            <div class="withdraw-controls">
+                <div class="inventory-section mb-4">
+                    <h4>🎒 Ваши скины для вывода</h4>
+                    <div class="inventory-list" id="withdrawInventory">
+                        <!-- Скины будут загружены через JS -->
+                    </div>
+                </div>
+
+                <div class="selected-skins-section mb-4">
+                    <h4>📦 Выбранные для вывода</h4>
+                    <div class="selected-skins" id="selectedSkins">
+                        <div class="placeholder-text">Выберите скины для вывода</div>
+                    </div>
+                </div>
+
+                <div class="withdraw-info">
+                    <h5>📊 Информация о выводе</h5>
+                    <div class="withdraw-stats">
+                        <div class="stat-item">
+                            <span>Выбрано скинов:</span>
+                            <span id="selectedCount">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Общая стоимость:</span>
+                            <span id="totalValue">0 UC</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Комиссия (10%):</span>
+                            <span id="commission">0 UC</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>К получению:</span>
+                            <span id="finalAmount">0 UC</span>
+                        </div>
+                    </div>
+
+                    <div class="withdraw-form mt-3">
+                        <div class="mb-3">
+                            <label class="form-label">📧 Ваш Email для связи</label>
+                            <input type="email" class="form-control" id="userEmail" placeholder="example@gmail.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">🎮 Ваш ID в PUBG Mobile</label>
+                            <input type="text" class="form-control" id="pubgId" placeholder="5123456789">
+                        </div>
+                        <button class="btn btn-withdraw" id="withdrawBtn" onclick="processWithdraw()" disabled>
+                            💰 Запросить вывод
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая часть - информация и история -->
+        <div class="col-md-6">
+            <div class="withdraw-info-sidebar">
+                <div class="rules-section mb-4">
+                    <h4>📋 Правила вывода</h4>
+                    <div class="rules-list">
+                        <div class="rule-item">
+                            <span class="rule-icon">💎</span>
+                            <span>Минимальная сумма вывода: <strong>500 UC</strong></span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-icon">⏰</span>
+                            <span>Вывод обрабатывается в течение <strong>24 часов</strong></span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-icon">💰</span>
+                            <span>Комиссия системы: <strong>10%</strong> от суммы</span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-icon">📧</span>
+                            <span>С вами свяжутся по email для подтверждения</span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-icon">🎮</span>
+                            <span>Скины будут переданы в игру по вашему ID</span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-icon">⚠️</span>
+                            <span>После вывода скины удаляются из инвентаря</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="commission-info mb-4">
+                    <h4>💰 Комиссия системы</h4>
+                    <div class="commission-table">
+                        <div class="commission-row">
+                            <span>Сумма вывода</span>
+                            <span>Комиссия</span>
+                            <span>Вы получите</span>
+                        </div>
+                        <div class="commission-row">
+                            <span>500 UC</span>
+                            <span>50 UC</span>
+                            <span>450 UC</span>
+                        </div>
+                        <div class="commission-row">
+                            <span>1,000 UC</span>
+                            <span>100 UC</span>
+                            <span>900 UC</span>
+                        </div>
+                        <div class="commission-row">
+                            <span>5,000 UC</span>
+                            <span>500 UC</span>
+                            <span>4,500 UC</span>
+                        </div>
+                        <div class="commission-row">
+                            <span>10,000 UC</span>
+                            <span>1,000 UC</span>
+                            <span>9,000 UC</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="withdraw-history">
+                    <h4>📋 История выводов</h4>
+                    <div class="history-list" id="withdrawHistory">
+                        <div class="placeholder-text">Здесь будет отображаться история выводов</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Переменные для вывода
+let selectedSkins = [];
+let userInventory = [];
+
+// Вспомогательные функции
+function getSkinRarity(skinPrice) {
+    if (skinPrice <= 50) return 'common';
+    if (skinPrice <= 300) return 'rare';
+    if (skinPrice <= 1500) return 'epic';
+    if (skinPrice <= 5000) return 'legendary';
+    if (skinPrice <= 50000) return 'mythical';
+    return 'ancient';
+}
+
+function getRarityName(rarity) {
+    const names = {
+        'common': 'Обычный', 'rare': 'Редкий', 'epic': 'Эпический',
+        'legendary': 'Легендарный', 'mythical': 'Мифический', 'ancient': 'Древний'
+    };
+    return names[rarity] || 'Обычный';
+}
+
+function getRarityColor(rarity) {
+    const colors = {
+        'common': '#6c757d', 'rare': '#007bff', 'epic': '#8a2be2',
+        'legendary': '#ff6b6b', 'mythical': '#ff00ff', 'ancient': '#00ffff'
+    };
+    return colors[rarity] || '#6c757d';
+}
+
+// Загружаем инвентарь при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    loadWithdrawInventory();
+});
+
+function loadWithdrawInventory() {
+    fetch('/api/get_inventory')
+        .then(response => response.json())
+        .then(data => {
+            userInventory = data.skins;
+            displayWithdrawInventory();
+        });
+}
+
+function displayWithdrawInventory() {
+    const inventoryList = document.getElementById('withdrawInventory');
+    inventoryList.innerHTML = '';
+
+    if (userInventory.length === 0) {
+        inventoryList.innerHTML = '<p class="text-center">Инвентарь пуст</p>';
+        return;
+    }
+
+    userInventory.forEach(skin => {
+        // Проверяем, не выбран ли уже скин
+        const isSelected = selectedSkins.some(s => s.id === skin.id);
+        const rarity = getSkinRarity(skin.price);
+        
+        const skinElement = document.createElement('div');
+        skinElement.className = `inventory-skin-item ${isSelected ? 'selected' : ''}`;
+        skinElement.onclick = () => toggleSkinSelection(skin);
+        skinElement.innerHTML = `
+            <div class="skin-checkbox">
+                <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSkinSelection(${JSON.stringify(skin).replace(/"/g, '&quot;')})">
+            </div>
+            <img src="${skin.image}" alt="${skin.name}">
+            <div class="skin-details">
+                <h6>${skin.name}</h6>
+                <span class="skin-price">${skin.price.toLocaleString()} UC</span>
+                <span class="skin-rarity ${rarity}">${getRarityName(rarity)}</span>
+            </div>
+        `;
+        inventoryList.appendChild(skinElement);
+    });
+}
+
+function toggleSkinSelection(skin) {
+    const existingIndex = selectedSkins.findIndex(s => s.id === skin.id);
+    
+    if (existingIndex >= 0) {
+        // Удаляем скин из выбранных
+        selectedSkins.splice(existingIndex, 1);
+    } else {
+        // Добавляем скин в выбранные
+        selectedSkins.push(skin);
+    }
+    
+    updateSelectedSkinsDisplay();
+    updateWithdrawInfo();
+    displayWithdrawInventory();
+}
+
+function updateSelectedSkinsDisplay() {
+    const selectedSkinsDiv = document.getElementById('selectedSkins');
+    
+    if (selectedSkins.length === 0) {
+        selectedSkinsDiv.innerHTML = '<div class="placeholder-text">Выберите скины для вывода</div>';
+        return;
+    }
+    
+    selectedSkinsDiv.innerHTML = '';
+    selectedSkins.forEach(skin => {
+        const rarity = getSkinRarity(skin.price);
+        const skinElement = document.createElement('div');
+        skinElement.className = 'selected-skin-item';
+        skinElement.innerHTML = `
+            <img src="${skin.image}" alt="${skin.name}">
+            <div class="skin-details">
+                <h6>${skin.name}</h6>
+                <span class="skin-rarity ${rarity}">${getRarityName(rarity)}</span>
+                <span class="skin-price">${skin.price.toLocaleString()} UC</span>
+            </div>
+            <button class="btn-remove" onclick="removeSkinFromSelection(${skin.id})">❌</button>
+        `;
+        selectedSkinsDiv.appendChild(skinElement);
+    });
+}
+
+function removeSkinFromSelection(skinId) {
+    selectedSkins = selectedSkins.filter(skin => skin.id !== skinId);
+    updateSelectedSkinsDisplay();
+    updateWithdrawInfo();
+    displayWithdrawInventory();
+}
+
+function updateWithdrawInfo() {
+    const selectedCount = document.getElementById('selectedCount');
+    const totalValue = document.getElementById('totalValue');
+    const commission = document.getElementById('commission');
+    const finalAmount = document.getElementById('finalAmount');
+    const withdrawBtn = document.getElementById('withdrawBtn');
+
+    const total = selectedSkins.reduce((sum, skin) => sum + skin.price, 0);
+    const commissionAmount = Math.floor(total * 0.1); // 10% комиссия
+    const final = total - commissionAmount;
+
+    selectedCount.textContent = selectedSkins.length;
+    totalValue.textContent = total.toLocaleString() + ' UC';
+    commission.textContent = commissionAmount.toLocaleString() + ' UC';
+    finalAmount.textContent = final.toLocaleString() + ' UC';
+
+    // Активируем кнопку если сумма больше минимальной и заполнены поля
+    const email = document.getElementById('userEmail').value;
+    const pubgId = document.getElementById('pubgId').value;
+    const minAmount = 500;
+
+    withdrawBtn.disabled = !(final >= minAmount && email && pubgId);
+}
+
+function processWithdraw() {
+    const email = document.getElementById('userEmail').value;
+    const pubgId = document.getElementById('pubgId').value;
+    const total = selectedSkins.reduce((sum, skin) => sum + skin.price, 0);
+    const commission = Math.floor(total * 0.1);
+    const final = total - commission;
+
+    if (final < 500) {
+        showNotification('Минимальная сумма вывода - 500 UC!', 'error');
+        return;
+    }
+
+    if (!email || !pubgId) {
+        showNotification('Заполните все поля!', 'error');
+        return;
+    }
+
+    const withdrawBtn = document.getElementById('withdrawBtn');
+    withdrawBtn.disabled = true;
+    withdrawBtn.textContent = 'Обработка...';
+
+    // Отправляем запрос на вывод
+    fetch('/api/process_withdraw', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            skins: selectedSkins,
+            email: email,
+            pubg_id: pubgId,
+            total_amount: total,
+            commission: commission,
+            final_amount: final
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('✅ Запрос на вывод успешно отправлен! С вами свяжутся в течение 24 часов.');
+            // Очищаем форму
+            selectedSkins = [];
+            document.getElementById('userEmail').value = '';
+            document.getElementById('pubgId').value = '';
+            updateSelectedSkinsDisplay();
+            updateWithdrawInfo();
+            loadWithdrawInventory();
+            updateHeaderBalance();
+        } else {
+            showNotification('Ошибка при обработке вывода!', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Ошибка при обработке вывода!', 'error');
+    })
+    .finally(() => {
+        withdrawBtn.disabled = false;
+        withdrawBtn.textContent = '💰 Запросить вывод';
+    });
+}
+
+// Слушатели изменений в полях формы
+document.getElementById('userEmail').addEventListener('input', updateWithdrawInfo);
+document.getElementById('pubgId').addEventListener('input', updateWithdrawInfo);
+</script>
+
+<style>
+.withdraw-container {
+    padding: 20px;
+}
+
+.withdraw-controls {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 20px;
+    height: 100%;
+}
+
+.withdraw-info-sidebar {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 20px;
+    height: 100%;
+}
+
+/* Стили для списка скинов */
+.inventory-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
+
+.inventory-skin-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #8a2be2;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.inventory-skin-item:hover {
+    background: rgba(138, 43, 226, 0.2);
+    transform: translateY(-2px);
+    border-color: #ffd700;
+}
+
+.inventory-skin-item.selected {
+    background: rgba(138, 43, 226, 0.4);
+    border-color: #ffd700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+.skin-checkbox {
+    margin-right: 10px;
+}
+
+.skin-checkbox input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.inventory-skin-item img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    margin-right: 15px;
+    border-radius: 6px;
+    border: 1px solid #8a2be2;
+}
+
+.skin-details {
+    flex: 1;
+}
+
+.skin-details h6 {
+    margin: 0 0 5px 0;
+    color: white;
+    font-size: 14px;
+}
+
+.skin-price {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 12px;
+    display: block;
+    margin-bottom: 3px;
+}
+
+.skin-rarity {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+.skin-rarity.common { background: #6c757d; color: white; }
+.skin-rarity.rare { background: #007bff; color: white; }
+.skin-rarity.epic { background: #8a2be2; color: white; }
+.skin-rarity.legendary { background: #ff6b6b; color: white; }
+.skin-rarity.mythical { background: #ff00ff; color: white; }
+.skin-rarity.ancient { background: #00ffff; color: black; }
+
+/* Выбранные скины */
+.selected-skins {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
+
+.selected-skin-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: rgba(40, 167, 69, 0.2);
+    border: 2px solid #28a745;
+    border-radius: 6px;
+    position: relative;
+}
+
+.selected-skin-item img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    margin-right: 10px;
+    border-radius: 5px;
+}
+
+.btn-remove {
+    background: rgba(220, 53, 69, 0.8);
+    border: none;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+}
+
+/* Информация о выводе */
+.withdraw-stats {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #8a2be2;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: white;
+    font-size: 14px;
+}
+
+.stat-item span:last-child {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.withdraw-form {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #8a2be2;
+}
+
+.form-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #8a2be2;
+    color: white;
+}
+
+.form-control:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #b19cd9;
+    color: white;
+    box-shadow: 0 0 0 0.2rem rgba(138, 43, 226, 0.25);
+}
+
+.form-label {
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.btn-withdraw {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border: none;
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    width: 100%;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.btn-withdraw:hover:not(:disabled) {
+    background: linear-gradient(45deg, #218838, #1e9c7a);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+}
+
+.btn-withdraw:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Правила и комиссия */
+.rules-list {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #8a2be2;
+}
+
+.rule-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    color: #b19cd9;
+    font-size: 14px;
+}
+
+.rule-icon {
+    font-size: 18px;
+    margin-right: 10px;
+    min-width: 20px;
+}
+
+.commission-table {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #8a2be2;
+}
+
+.commission-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    padding: 8px;
+    border-bottom: 1px solid #8a2be2;
+    font-size: 13px;
+}
+
+.commission-row:first-child {
+    font-weight: bold;
+    color: #ffd700;
+    border-bottom: 2px solid #ffd700;
+}
+
+.commission-row:not(:first-child) {
+    color: #b19cd9;
+}
+
+.commission-row:last-child {
+    border-bottom: none;
+}
+
+/* История выводов */
+.withdraw-history {
+    margin-top: 20px;
+}
+
+.history-list {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #8a2be2;
+    min-height: 150px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.placeholder-text {
+    text-align: center;
+    color: #b19cd9;
+    padding: 40px 0;
+    font-style: italic;
+}
+
+.text-success { color: #28a745 !important; }
+.text-danger { color: #dc3545 !important; }
+</style>
+{% endblock %}

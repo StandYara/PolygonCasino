@@ -1,0 +1,453 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="inventory-container">
+    <h1 class="text-center mb-4">🎒 Инвентарь</h1>
+
+    <div class="inventory-stats mb-4">
+        <div class="stat-card">
+            <h5>Всего скинов</h5>
+            <span class="skin-count" id="skinCount">0</span>
+        </div>
+    </div>
+
+    <!-- Панель сортировки -->
+    <div class="sorting-panel mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-0">Сортировка:</h5>
+            </div>
+            <div class="col-md-6">
+                <div class="sort-controls">
+                    <select class="form-select" id="sortField">
+                        <option value="price">По стоимости</option>
+                        <option value="rarity">По редкости</option>
+                        <option value="date">По новизне</option>
+                        <option value="name">По названию</option>
+                    </select>
+                    <select class="form-select" id="sortOrder">
+                        <option value="desc">По убыванию ▼</option>
+                        <option value="asc">По возрастанию ▲</option>
+                    </select>
+                    <button class="btn btn-sort" onclick="applySorting()">
+                        🔄 Применить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="inventory-skins">
+        <h3 class="mb-3">Ваши скины</h3>
+        <div class="row" id="inventorySkins">
+            <!-- Скины будут загружаться через JS -->
+        </div>
+    </div>
+</div>
+
+<script>
+// Переменные для сортировки
+let currentSortField = 'price';
+let currentSortOrder = 'desc';
+let allSkins = [];
+
+// Вспомогательные функции для редкостей
+function getSkinRarity(skinPrice) {
+    if (skinPrice <= 50) return 'common';
+    if (skinPrice <= 300) return 'rare';
+    if (skinPrice <= 1500) return 'epic';
+    if (skinPrice <= 5000) return 'legendary';
+    if (skinPrice <= 50000) return 'mythical';
+    return 'ancient';
+}
+
+function getRarityName(rarity) {
+    const names = {
+        'common': 'Обычный',
+        'rare': 'Редкий',
+        'epic': 'Эпический',
+        'legendary': 'Легендарный',
+        'mythical': 'Мифический',
+        'ancient': 'Древний'
+    };
+    return names[rarity] || 'Обычный';
+}
+
+function getRarityOrder(rarity) {
+    const order = {
+        'common': 1,
+        'rare': 2,
+        'epic': 3,
+        'legendary': 4,
+        'mythical': 5,
+        'ancient': 6
+    };
+    return order[rarity] || 0;
+}
+
+// Функции сортировки
+function sortSkins(skins, field, order) {
+    return skins.sort((a, b) => {
+        let valueA, valueB;
+
+        switch (field) {
+            case 'price':
+                valueA = a.price;
+                valueB = b.price;
+                break;
+            case 'rarity':
+                valueA = getRarityOrder(getSkinRarity(a.price));
+                valueB = getRarityOrder(getSkinRarity(b.price));
+                break;
+            case 'date':
+                valueA = new Date(a.acquired_at);
+                valueB = new Date(b.acquired_at);
+                break;
+            case 'name':
+                valueA = a.name.toLowerCase();
+                valueB = b.name.toLowerCase();
+                break;
+            default:
+                valueA = a.price;
+                valueB = b.price;
+        }
+
+        // Для числовых значений
+        if (typeof valueA === 'number') {
+            return order === 'desc' ? valueB - valueA : valueA - valueB;
+        }
+
+        // Для дат
+        if (valueA instanceof Date) {
+            return order === 'desc' ? valueB - valueA : valueA - valueB;
+        }
+
+        // Для строк
+        if (order === 'desc') {
+            return valueB.localeCompare(valueA);
+        } else {
+            return valueA.localeCompare(valueB);
+        }
+    });
+}
+
+function applySorting() {
+    playSound('clickSound');
+    currentSortField = document.getElementById('sortField').value;
+    currentSortOrder = document.getElementById('sortOrder').value;
+    displayInventory();
+}
+
+function loadInventory() {
+    fetch('/api/get_inventory')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('skinCount').textContent = data.skins.length;
+            allSkins = data.skins;
+
+            // Добавляем информацию о редкости для сортировки
+            allSkins.forEach(skin => {
+                skin.rarity = getSkinRarity(skin.price);
+                skin.rarity_order = getRarityOrder(skin.rarity);
+            });
+
+            displayInventory();
+        });
+}
+
+function displayInventory() {
+    const inventoryContainer = document.getElementById('inventorySkins');
+    inventoryContainer.innerHTML = '';
+
+    if (allSkins.length === 0) {
+        inventoryContainer.innerHTML = `
+            <div class="col-12">
+                <div class="empty-inventory text-center">
+                    <div class="empty-icon">🎒</div>
+                    <h4>Инвентарь пуст</h4>
+                    <p>Откройте кейсы чтобы получить скины!</p>
+                    <a href="/cases" class="btn btn-primary">🎁 Открыть кейсы</a>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    // Сортируем скины
+    const sortedSkins = sortSkins([...allSkins], currentSortField, currentSortOrder);
+
+    // Отображаем информацию о сортировке
+    updateSortInfo();
+
+    sortedSkins.forEach(skin => {
+        const skinElement = document.createElement('div');
+        skinElement.className = 'col-md-3 mb-4';
+        const rarity = getSkinRarity(skin.price);
+
+        skinElement.innerHTML = `
+            <div class="inventory-skin-card">
+                <div class="skin-header">
+                    <span class="skin-rarity ${rarity}">${getRarityName(rarity)}</span>
+                    <span class="skin-date">${formatDate(skin.acquired_at)}</span>
+                </div>
+                <img src="${skin.image}" alt="${skin.name}">
+                <div class="skin-info">
+                    <h6>${skin.name}</h6>
+                    <p class="skin-price">${skin.price.toLocaleString()} UC</p>
+                    <button class="btn btn-sell-inventory"
+                            onclick="showSellConfirm(${skin.id}, '${skin.name.replace(/'/g, "\\'")}', '${skin.image}', ${skin.price})">
+                        💰 Продать
+                    </button>
+                </div>
+            </div>
+        `;
+        inventoryContainer.appendChild(skinElement);
+    });
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '';
+
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) return 'Сегодня';
+    if (diffDays === 2) return 'Вчера';
+    if (diffDays <= 7) return `${diffDays} дн. назад`;
+
+    return date.toLocaleDateString('ru-RU');
+}
+
+function updateSortInfo() {
+    const sortFieldSelect = document.getElementById('sortField');
+    const sortOrderSelect = document.getElementById('sortOrder');
+
+    // Устанавливаем текущие значения
+    sortFieldSelect.value = currentSortField;
+    sortOrderSelect.value = currentSortOrder;
+}
+
+// Загружаем инвентарь при открытии страницы
+document.addEventListener('DOMContentLoaded', function() {
+    loadInventory();
+
+    // Автоматически применяем сортировку при изменении select
+    document.getElementById('sortField').addEventListener('change', applySorting);
+    document.getElementById('sortOrder').addEventListener('change', applySorting);
+});
+
+// Обновляем инвентарь при возврате на страницу
+window.addEventListener('focus', function() {
+    loadInventory();
+});
+</script>
+
+<style>
+.inventory-container {
+    padding: 20px;
+}
+
+.inventory-stats {
+    display: flex;
+    justify-content: center;
+}
+
+.stat-card {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    min-width: 200px;
+}
+
+.stat-card h5 {
+    color: #b19cd9;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.skin-count {
+    color: #ffd700;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* Панель сортировки */
+.sorting-panel {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.sort-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.form-select {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #8a2be2;
+    color: white;
+    border-radius: 5px;
+    padding: 8px 12px;
+}
+
+.form-select:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #b19cd9;
+    color: white;
+    box-shadow: 0 0 0 0.2rem rgba(138, 43, 226, 0.25);
+}
+
+.btn-sort {
+    background: linear-gradient(45deg, #8a2be2, #4b0082);
+    border: none;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.btn-sort:hover {
+    background: linear-gradient(45deg, #9b4dff, #5a00a8);
+    transform: translateY(-2px);
+}
+
+/* Карточки скинов */
+.inventory-skin-card {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    transition: all 0.3s ease;
+    height: 100%;
+    position: relative;
+}
+
+.inventory-skin-card:hover {
+    transform: translateY(-5px);
+    border-color: #b19cd9;
+    box-shadow: 0 10px 20px rgba(138, 43, 226, 0.3);
+}
+
+.skin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.skin-rarity {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+.skin-rarity.common { background: #6c757d; color: white; }
+.skin-rarity.rare { background: #007bff; color: white; }
+.skin-rarity.epic { background: #8a2be2; color: white; }
+.skin-rarity.legendary { background: #ff6b6b; color: white; }
+.skin-rarity.mythical { background: #ff00ff; color: white; }
+.skin-rarity.ancient { background: #00ffff; color: black; }
+
+.skin-date {
+    font-size: 10px;
+    color: #b19cd9;
+}
+
+.inventory-skin-card img {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border: 2px solid #8a2be2;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.skin-info h6 {
+    color: white;
+    margin-bottom: 8px;
+    font-size: 14px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.skin-price {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.btn-sell-inventory {
+    background: linear-gradient(45deg, #ffc107, #fd7e14);
+    border: none;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    font-size: 12px;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.btn-sell-inventory:hover {
+    background: linear-gradient(45deg, #ffca2c, #fd9843);
+    transform: translateY(-2px);
+}
+
+/* Состояние пустого инвентаря */
+.empty-inventory {
+    background: rgba(45, 27, 105, 0.3);
+    border: 2px solid #8a2be2;
+    border-radius: 10px;
+    padding: 40px;
+    margin: 20px 0;
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.empty-inventory h4 {
+    color: white;
+    margin-bottom: 10px;
+}
+
+.empty-inventory p {
+    color: #b19cd9;
+    margin-bottom: 20px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .sort-controls {
+        flex-direction: column;
+    }
+
+    .form-select {
+        width: 100%;
+    }
+
+    .btn-sort {
+        width: 100%;
+    }
+
+    .inventory-skin-card {
+        margin-bottom: 15px;
+    }
+}
+</style>
+{% endblock %}
