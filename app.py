@@ -8,7 +8,12 @@ import random
 import os
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+
+# Добавляем обработку статических файлов
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    return app.send_static_file(filename)
 
 # Инициализация БД при запуске
 with app.app_context():
@@ -18,7 +23,8 @@ with app.app_context():
 # Проверка авторизации для всех страниц
 @app.before_request
 def require_login():
-    if request.endpoint and not request.endpoint.startswith('static') and not request.endpoint.startswith('auth_'):
+    allowed_endpoints = ['auth_login', 'auth_register', 'serve_static']
+    if request.endpoint and not request.endpoint.startswith('static') and request.endpoint not in allowed_endpoints:
         if 'user_id' not in session:
             return redirect(url_for('auth_login'))
 
