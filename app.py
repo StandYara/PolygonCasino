@@ -7,6 +7,9 @@ from datetime import datetime, timedelta
 import random
 import os
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 
