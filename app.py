@@ -8,13 +8,34 @@ import random
 
 import os
 
+# Проверяем и создаем папки
+for folder in ['database', 'static', 'templates']:
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+        print(f"📁 Created folder: {folder}")
+
+# Проверяем и создаем папки
+for folder in ['database', 'static', 'templates']:
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+        print(f"📁 Created folder: {folder}")
+
 app = Flask(__name__)
 # Генерируем случайный ключ, если нет в настройках
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24).hex())
 
 # Инициализация БД при запуске
 with app.app_context():
-    init_db()
+    try:
+        init_db()
+        print("✅ Database initialized successfully")
+    except Exception as e:
+        print(f"❌ Database initialization error: {str(e)}")
+        # Создаем папку database если нет
+        import os
+        if not os.path.exists('database'):
+            os.makedirs('database')
+        init_db()  # Пробуем еще раз
 
 
 # Проверка авторизации для всех страниц
