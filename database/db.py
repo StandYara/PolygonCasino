@@ -1,10 +1,16 @@
 import sqlite3
 import hashlib
 import os
-
+from datetime import datetime, timedelta
 
 def get_db_connection():
-    conn = sqlite3.connect('database/casino.db')
+    # Создаем папку database если её нет
+    if not os.path.exists('database'):
+        os.makedirs('database')
+
+    # Правильный путь к базе
+    db_path = os.path.join('database', 'casino.db')
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -189,7 +195,7 @@ def init_db():
         ''')
 
     # Добавляем тестовые временные кейсы
-    from datetime import datetime, timedelta
+
 
     # Хеллоуинские кейсы (активны 7 дней)
     halloween_end = datetime.now() + timedelta(days=7)

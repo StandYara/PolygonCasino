@@ -5,18 +5,12 @@ from utils.game_logic import get_case_skins, spin_roulette, SKINS_DATABASE, get_
 
 from datetime import datetime, timedelta
 import random
+
 import os
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
-
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-
-# Добавляем обработку статических файлов
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    return app.send_static_file(filename)
+# Генерируем случайный ключ, если нет в настройках
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24).hex())
 
 # Инициализация БД при запуске
 with app.app_context():
@@ -26,8 +20,7 @@ with app.app_context():
 # Проверка авторизации для всех страниц
 @app.before_request
 def require_login():
-    allowed_endpoints = ['auth_login', 'auth_register', 'serve_static']
-    if request.endpoint and not request.endpoint.startswith('static') and request.endpoint not in allowed_endpoints:
+    if request.endpoint and not request.endpoint.startswith('static') and not request.endpoint.startswith('auth_'):
         if 'user_id' not in session:
             return redirect(url_for('auth_login'))
 
@@ -265,49 +258,81 @@ def auth_logout():
 
 
 # Основные API методы
+# В app.py обновляем функцию open_case
+# Обновляем функцию open_case для работы со всеми типами кейсов
 @app.route('/api/open_case/<int:case_id>')
 def open_case(case_id):
     if 'user_id' not in session:
         return jsonify({'error': 'Not authorized'}), 401
 
     user_id = session['user_id']
+
+    # Расширенная система цен кейсов
     case_prices = {
-        1: 0, 2: 0, 3: 0, 4: 50, 5: 100, 6: 200,
-        7: 500, 8: 1000, 9: 2000, 10: 5000, 11: 10000, 12: 25000,
-        13: 1500, 14: 3000, 15: 7500, 16: 15000, 17: 50000, 18: 100000,
-        19: 750, 20: 1500, 21: 3000, 22: 1000, 23: 2500, 24: 5000
+        # Бесплатные кейсы
+        1: 0, 2: 0, 3: 0,
+        # Для новичков
+        4: 50, 5: 100, 6: 200,
+        # Премиум
+        7: 500, 8: 1000, 9: 2000,
+        # Легендарные
+        10: 5000, 11: 10000, 12: 25000,
+        # Секретные
+        13: 1500, 14: 3000, 15: 7500,
+        # VIP
+        16: 15000, 17: 50000, 18: 100000,
+        # Хеллоуинские
+        19: 750, 20: 1500, 21: 3000,
+        # Зимние
+        22: 1000, 23: 2500, 24: 5000
     }
 
     case_price = case_prices.get(case_id, 100)
 
+    # Для бесплатных кейсов проверяем лимиты
     if case_price == 0:
         if not check_free_case_availability(user_id, case_id):
             return jsonify({'error': 'Бесплатный кейс уже использован сегодня'}), 400
 
     current_balance = get_user_balance(user_id)
+
     if current_balance < case_price:
         return jsonify({'error': 'Недостаточно UC'}), 400
 
+    # Система типов кейсов для game_logic
     case_types = {
+        # Бесплатные
         1: 'free', 2: 'free', 3: 'free',
+        # Для новичков
         4: 'starter_50', 5: 'starter_100', 6: 'starter_200',
+        # Премиум
         7: 'premium_500', 8: 'premium_1000', 9: 'premium_2000',
+        # Легендарные
         10: 'legendary_5000', 11: 'legendary_10000', 12: 'legendary_25000',
+        # Секретные
         13: 'secret_1500', 14: 'secret_3000', 15: 'secret_7500',
+        # VIP
         16: 'vip_15000', 17: 'vip_50000', 18: 'vip_100000',
+        # Хеллоуинские
         19: 'halloween_750', 20: 'halloween_1500', 21: 'halloween_3000',
+        # Зимние
         22: 'winter_1000', 23: 'winter_2500', 24: 'winter_5000'
     }
 
     case_type = case_types.get(case_id, 'basic')
+
+    # СПЕРВА получаем выигранный скин
     won_skin = spin_roulette(case_type)
 
+    # ПОТОМ списываем баланс (кроме бесплатных)
     if case_price > 0:
         update_user_balance(user_id, current_balance - case_price)
 
+    # Для бесплатных кейсов отмечаем использование
     if case_price == 0:
         mark_free_case_used(user_id, case_id)
 
+    # Обновляем статистику и квесты
     update_user_stats(user_id, 'total_cases_opened')
     update_quest_progress(user_id, 'open_cases')
 
@@ -776,7 +801,10 @@ def update_login_statistics(user_id):
     conn.close()
 
 def update_quest_progress(user_id, quest_type, increment=1):
+    """Обновляет прогресс квестов"""
     conn = get_db_connection()
+
+    # ИСПРАВЛЕНИЕ: Получаем квесты по типу
     quests = conn.execute(
         'SELECT * FROM quests WHERE quest_type = ? AND is_active = 1',
         (quest_type,)
@@ -788,6 +816,7 @@ def update_quest_progress(user_id, quest_type, increment=1):
             (user_id, quest['id'])
         ).fetchone()
 
+        # Пропускаем если квест уже завершен и награда получена
         if progress and progress['is_completed'] and progress['completed_at']:
             continue
 
@@ -795,12 +824,14 @@ def update_quest_progress(user_id, quest_type, increment=1):
         is_completed = new_value >= quest['target_value']
 
         if progress:
+            # Обновляем только если еще не завершен или не получена награда
             if not progress['completed_at']:
                 conn.execute(
                     'UPDATE quest_progress SET current_value = ?, is_completed = ? WHERE user_id = ? AND quest_id = ?',
                     (new_value, 1 if is_completed else 0, user_id, quest['id'])
                 )
         else:
+            # Создаем новую запись только если её нет
             conn.execute(
                 'INSERT INTO quest_progress (user_id, quest_id, current_value, is_completed) VALUES (?, ?, ?, ?)',
                 (user_id, quest['id'], new_value, 1 if is_completed else 0)
@@ -1335,5 +1366,7 @@ def change_avatar():
     return jsonify({'success': True})
 
 if __name__ == "__main__":
+    # Для разработки
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    debug_mode = os.environ.get("FLASK_ENV") == "development"
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)
