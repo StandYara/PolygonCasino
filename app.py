@@ -24,6 +24,14 @@ app = Flask(__name__)
 # Генерируем случайный ключ, если нет в настройках
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24).hex())
 
+@app.route('/')
+def health_check():
+    return "Polygon Casino OK", 200
+
+@app.route('/health')
+def health():
+    return "OK", 200
+
 # Инициализация БД при запуске
 with app.app_context():
     try:
@@ -276,12 +284,6 @@ def auth_register():
 def auth_logout():
     session.clear()
     return redirect(url_for('auth_login'))
-
-# Добавь этот маршрут где-то после @app.route('/')
-
-@app.route('/health')
-def health_check():
-    return jsonify({'status': 'healthy', 'service': 'sticker-auction'}), 200
 
 # Основные API методы
 # В app.py обновляем функцию open_case
