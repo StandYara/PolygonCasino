@@ -26,11 +26,7 @@ app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24).hex())
 
 @app.route('/')
 def home():
-    return "Polygon Casino запущен", 200
-
-@app.route('/health')
-def health():
-    return "OK", 200
+    return "Сайт работает", 200
 
 # Инициализация БД при запуске
 with app.app_context():
