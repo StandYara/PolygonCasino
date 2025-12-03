@@ -256,6 +256,11 @@ def auth_logout():
     session.clear()
     return redirect(url_for('auth_login'))
 
+# Добавь этот маршрут где-то после @app.route('/')
+
+@app.route('/health')
+def health_check():
+    return jsonify({'status': 'healthy', 'service': 'sticker-auction'}), 200
 
 # Основные API методы
 # В app.py обновляем функцию open_case
