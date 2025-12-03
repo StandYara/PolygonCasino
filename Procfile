@@ -1,1 +1,1 @@
-web: python app.py
+web: sleep 10 && gunicorn app:app

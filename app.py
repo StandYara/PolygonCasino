@@ -25,8 +25,8 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24).hex())
 
 @app.route('/')
-def health_check():
-    return "Polygon Casino OK", 200
+def home():
+    return "Polygon Casino запущен", 200
 
 @app.route('/health')
 def health():
