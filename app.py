@@ -14,12 +14,6 @@ for folder in ['database', 'static', 'templates']:
         os.makedirs(folder)
         print(f"📁 Created folder: {folder}")
 
-# Проверяем и создаем папки
-for folder in ['database', 'static', 'templates']:
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-        print(f"📁 Created folder: {folder}")
-
 app = Flask(__name__)
 # Генерируем случайный ключ, если нет в настройках
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24).hex())
